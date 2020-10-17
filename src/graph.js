@@ -1,3 +1,10 @@
+/*
+TODO:
+element info con todos los balances
+labels en links
+filtrar por tokens
+usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
+*/
 import "regenerator-runtime/runtime.js"
 import React, { PureComponent } from 'react'
 import { render } from 'react-dom'
@@ -23,6 +30,13 @@ const
   SEMANTIC_ZOOM_TRESHOLD = 1.5,
   DEFAULT_HOVER_COLOR = '#000000',
   FPS_UPDATE_WINDOW = 30
+
+const hextoAscii = hex => {
+  let str = ''
+  for (let i = 0; i < hex.length && hex.substr(i, 2) !== '00'; i += 2)
+    str += String.fromCharCode(parseInt(hex.substr(i, 2), 16))
+  return str
+}
 
 const fetch_token_metadata = (_ => {
   const metadata_cache = {
@@ -64,6 +78,19 @@ const fetch_token_metadata = (_ => {
   }
 })()
 
+const link_key = transfer => transfer.sender > transfer.receiver ? `${ transfer.sender }_${ transfer.receiver }` : `${ transfer.receiver }_${ transfer.sender }`
+
+const start_web3 = _ => {
+  if (!window.ethereum) {
+    alert('Missing MetaMask')
+    return
+  }
+
+  window.web3 = new web3(window.ethereum)
+  window.ethereum.enable()
+  return true
+}
+
 class App extends PureComponent {
   constructor() {
     super()
@@ -75,6 +102,7 @@ class App extends PureComponent {
     this.force = null
     this.links = []
     this.nodes = []
+    this.address_to_node = {}
     this.mouse_pointer = {
       x: 0,
       y: 0
@@ -132,64 +160,74 @@ class App extends PureComponent {
 
     d3.select(window).on('resize', this.resize_and_restart)
 
-    await this.load_transaction(this.transaction_hash)
+    if (!start_web3())
+      return
+    
+    await this.load_block('latest')
+    this.resize()
+    this.restart_simulation()
+    this.setState({ loading: false })
+
+    console.log(this.nodes)
 
     this.previous_ts = window.performance.now()
     window.requestAnimationFrame(this.loop)
   }
 
+  load_block = async bn => {
+    const block = await window.web3.eth.getBlock(bn)
+    await Promise.all(block.transactions.map(tx => this.load_transaction(tx)))
+    console.log(`Block ${ block.number } loaded`)
+  }
+
   load_transaction = async hash => {
-    if (!window.ethereum) {
-      alert('Missing MetaMask')
-      return
-    }
-
-    window.web3 = new web3(window.ethereum)
-    window.ethereum.enable()
-
     const receipt = await window.web3.eth.getTransactionReceipt(hash)
-    console.log(receipt)
 
     const transfers = []
     for (const l of receipt.logs) {
-      if (l.topics[0] === TRANSFER_TOPIC)
-        transfers.push({
-          token_address: l.address.toLowerCase(),
-          sender: `0x${ l.topics[1].substr(26, 40) }`,
-          receiver: `0x${ l.topics[2].substr(26, 40) }`,
-          amount: new BigNumber(l.data)
-        })
-      else if (l.address.toLowerCase() === WETH_ADDRESS && l.topics[0] === WETH_WRAP_TOPIC) {
-        const wrapper = `0x${ l.topics[1].substr(26, 40) }`,
-              amount = new BigNumber(l.data)
-        transfers.push({
-          token_address: 'ETH',
-          sender: wrapper,
-          receiver: WETH_ADDRESS,
-          amount
-        })
-        transfers.push({
-          token_address: WETH_ADDRESS,
-          sender: WETH_ADDRESS,
-          receiver: wrapper,
-          amount
-        })
+      try {
+        if (l.topics[0] === TRANSFER_TOPIC)
+          transfers.push({
+            token_address: l.address.toLowerCase(),
+            sender: `0x${ l.topics[1].substr(26, 40) }`,
+            receiver: `0x${ l.topics[2].substr(26, 40) }`,
+            amount: new BigNumber(l.data)
+          })
+        else if (l.address.toLowerCase() === WETH_ADDRESS && l.topics[0] === WETH_WRAP_TOPIC) {
+          const wrapper = `0x${ l.topics[1].substr(26, 40) }`,
+                amount = new BigNumber(l.data)
+          transfers.push({
+            token_address: 'ETH',
+            sender: wrapper,
+            receiver: WETH_ADDRESS,
+            amount
+          })
+          transfers.push({
+            token_address: WETH_ADDRESS,
+            sender: WETH_ADDRESS,
+            receiver: wrapper,
+            amount
+          })
+        }
+        else if (l.address.toLowerCase() === WETH_ADDRESS && l.topics[0] === WETH_UNWRAP_TOPIC) {
+          const unwrapper = `0x${ l.topics[1].substr(26, 40) }`,
+                amount = new BigNumber(l.data)
+          transfers.push({
+            token_address: WETH_ADDRESS,
+            sender: unwrapper,
+            receiver: WETH_ADDRESS,
+            amount
+          })
+          transfers.push({
+            token_address: 'ETH',
+            sender: WETH_ADDRESS,
+            receiver: unwrapper,
+            amount
+          })
+        }
       }
-      else if (l.address.toLowerCase() === WETH_ADDRESS && l.topics[0] === WETH_UNWRAP_TOPIC) {
-        const unwrapper = `0x${ l.topics[1].substr(26, 40) }`,
-              amount = new BigNumber(l.data)
-        transfers.push({
-          token_address: WETH_ADDRESS,
-          sender: unwrapper,
-          receiver: WETH_ADDRESS,
-          amount
-        })
-        transfers.push({
-          token_address: 'ETH',
-          sender: WETH_ADDRESS,
-          receiver: unwrapper,
-          amount
-        })
+      catch(e) {
+        console.log(`Error parsing tx ${ hash }`)
       }
     }
 
@@ -200,10 +238,49 @@ class App extends PureComponent {
       t.symbol = metadata.symbol
     }))
 
-    console.log(transfers)
-    /* TODO: */
+    const address_balances = {},
+          links = {}
+    for (const t of transfers) {
+      address_balances[t.sender] = address_balances[t.sender] || {}
+      address_balances[t.sender][t.token_address] = (address_balances[t.sender][t.token_address] || new BigNumber(0)).minus(t.amount)
+      address_balances[t.receiver] = address_balances[t.receiver] || {}
+      address_balances[t.receiver][t.token_address] = (address_balances[t.receiver][t.token_address] || new BigNumber(0)).plus(t.amount)
+      const key = link_key(t)
+      links[key] = links[key] || []
+      links[key].push(t)
+    }
 
-    this.setState({ loading: false })
+    for (const address in address_balances) {
+      if (!this.address_to_node[address]) {
+        const node = {
+          name: address.substr(0, 7),
+          full_name: address,
+          type: 'EOA',
+          balances: {},
+          radius: 30,
+          color: this.main_drawer.node_color(address)
+        }
+        this.nodes.push(node)
+        this.address_to_node[address] = node
+      }
+      for (const token_address in address_balances[address]) {
+        const n = this.address_to_node[address]
+        n.balances[token_address] = (n.balances[token_address] || new BigNumber(0)).plus(address_balances[address][token_address])
+      }
+    }
+
+    for (const key in links) {
+      const [source, target] = key.split('_'),
+            ts = links[key]
+      this.links.push({
+        source,
+        target,
+        transfers: ts,
+        width: 1,
+        loop: source === target,
+        type: 'link'
+      })
+    }
   }
 
   loop = ts => {
@@ -265,6 +342,29 @@ class App extends PureComponent {
     this.fps_elapsed_accum = 0
   }
 
+  resize_and_restart = _ => {
+    this.resize()
+    this.restart_forces()
+  }
+
+  resize = _ => {
+    this.canvas.width = this.canvas.clientWidth * this.pixel_ratio
+    this.canvas.height = this.canvas.clientHeight * this.pixel_ratio
+    this.update_viewport_boundaries()
+    this.setState({ viewport_size: { width: this.canvas.clientWidth, height: this.canvas.clientHeight } })
+    this.force.force('center', d3.forceCenter(0.5 * this.canvas.clientWidth, 0.5 * this.canvas.clientHeight))
+  }
+
+  restart_simulation = _ => {
+    this.force.nodes(this.nodes)
+    this.force.force("link").links(this.links.sort((a, b) => a.width - b.width)) /* from thinnest to widest so widest get drawn last */
+    this.restart_forces()
+  }
+
+  restart_forces = _ => {
+    this.force.alpha(1).restart()
+  }
+
   update_viewport_boundaries = _ => {
     this.main_ctx.setTransform(this.pixel_ratio, 0, 0, this.pixel_ratio, 0, 0)
     this.main_ctx.translate(this.zoom_transform.x, this.zoom_transform.y)
@@ -320,6 +420,57 @@ class App extends PureComponent {
 
   canvas_mousedown = _ => {
     this.update_element_at_pointer('clicked_element')
+  }
+
+  node_dragged = () => {
+    let inverted = this.zoom_transform.invert([d3.event.x, d3.event.y])
+    return this.force.find(inverted[0], inverted[1], 30)
+  }
+
+  start_drag = () => {
+    this.canvas_mousedown()
+    let event = d3.event
+    this.on_drag_start_timeout = setTimeout(_ => {
+      if (!event.active)
+        this.force.alphaTarget(0.1).restart()
+      event.subject.fx = event.x
+      event.subject.fy = event.y
+    }, 100)
+  }
+
+  dragged = () => {
+    this.canvas_mousemove()
+    d3.event.subject.fx = this.mouse_pointer.x
+    d3.event.subject.fy = this.mouse_pointer.y
+  }
+
+  end_drag = () => {
+    clearTimeout(this.on_drag_start_timeout)
+    if (!d3.event.active)
+      this.force.alphaTarget(0)
+  }
+
+  should_render_node = n => n.x  + n.radius > this.viewport_bb.min[0] && n.x - n.radius < this.viewport_bb.max[0] && n.y + n.radius > this.viewport_bb.min[1] && n.y - n.radius < this.viewport_bb.max[1]
+  
+  should_render_link = l => {
+    let min_x, max_x, min_y, max_y
+    if (l.source.x < l.target.x) {
+      min_x = l.source.x
+      max_x = l.target.x
+    }
+    else {
+      min_x = l.target.x
+      max_x = l.source.x
+    }
+    if (l.source.y < l.target.y) {
+      min_y = l.source.y
+      max_y = l.target.y
+    }
+    else {
+      min_y = l.target.y
+      max_y = l.source.y
+    }
+    return max_x > this.viewport_bb.min[0] && min_x < this.viewport_bb.max[0] && max_y > this.viewport_bb.min[1] && min_y < this.viewport_bb.max[1]
   }
 
   render() {
