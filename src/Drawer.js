@@ -21,8 +21,8 @@ class Drawer {
   draw = (drawing_scale, nodes, links) => {
     this.start_draw(drawing_scale)
     this.clear_canvas()
-    for (const l of links) this.draw_link(l)
     for (const n of nodes) this.draw_node(n)
+    for (const l of links) this.draw_link(l)
   }
 
   start_draw = drawing_scale => this.drawing_scale = drawing_scale

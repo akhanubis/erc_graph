@@ -1,5 +1,8 @@
+import CanvasTxt from 'canvas-txt'
 import Drawer from './Drawer'
 import DataUtils from './data_utils'
+
+// const LABEL_MIN_DISTANCE = 100
 
 class VectorDrawer extends Drawer {
   node_color = n => {
@@ -27,8 +30,12 @@ class VectorDrawer extends Drawer {
       let dx = l.target.x - l.source.x,
           dy = l.target.y - l.source.y,
           from = DataUtils.point_at_edge(l.source, l.source.radius, dx, dy, l.source.x < l.target.x, this.drawing_scale),
-          to = DataUtils.point_at_edge(l.target, l.target.radius, dx, dy, l.target.x < l.source.x, this.drawing_scale)
+          to = DataUtils.point_at_edge(l.target, l.target.radius, dx, dy, l.target.x < l.source.x, this.drawing_scale),
+          source_label = DataUtils.point_at_edge(l.source, l.source.radius + 5, dx, dy, l.source.x < l.target.x, this.drawing_scale),
+          target_label = DataUtils.point_at_edge(l.target, l.target.radius + 5, dx, dy, l.target.x < l.source.x, this.drawing_scale)
       this.draw_line(from, to)
+      this.draw_label(source_label, l.source_label)
+      this.draw_label(target_label, l.target_label)
     }
   }
 
@@ -50,6 +57,13 @@ class VectorDrawer extends Drawer {
     this.ctx.moveTo(start.x, start.y)
     this.ctx.bezierCurveTo(control_point_1.x, control_point_1.y, control_point_2.x, control_point_2.y, end.x, end.y)
     this.ctx.stroke()
+  }
+
+  draw_label = (at, text) => {
+    const box_x = 100 * this.drawing_scale
+    const box_y = 100 * this.drawing_scale
+    CanvasTxt.fontSize = 10 * this.drawing_scale
+    CanvasTxt.drawText(this.ctx, text, at.x - 0.5 * box_x, at.y - 0.5 * box_y, box_x, box_y)
   }
 }
 

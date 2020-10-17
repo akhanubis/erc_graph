@@ -4,6 +4,8 @@ element info con todos los balances
 labels en links
 filtrar por tokens
 usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
+obtener internal tx usando https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=0x0414c8df68b8086a36c3c7990196ab9c48fa455678b132094b085d9091656b05&apikey=YourApiKeyToken
+chequear https://etherscan.io/tx/0xc82a33cb8ccaae9807cab35fd9e37e0ea9eeccf98c60bd669f5c48d7d5eda1d3
 */
 import "regenerator-runtime/runtime.js"
 import React, { PureComponent } from 'react'
@@ -98,6 +100,7 @@ class App extends PureComponent {
 
     this.transaction_hash = url_params.get('hash')
     this.initialized = false
+    this.tokens_metadata = {}
     this.fps = 0
     this.force = null
     this.links = []
@@ -163,12 +166,13 @@ class App extends PureComponent {
     if (!start_web3())
       return
     
-    await this.load_block('latest')
+    if (this.transaction_hash)
+      await this.load_transaction(this.transaction_hash)
+    else
+      await this.load_block('latest')
     this.resize()
     this.restart_simulation()
     this.setState({ loading: false })
-
-    console.log(this.nodes)
 
     this.previous_ts = window.performance.now()
     window.requestAnimationFrame(this.loop)
@@ -236,6 +240,7 @@ class App extends PureComponent {
       t.decimals = metadata.decimals
       t.name = metadata.name
       t.symbol = metadata.symbol
+      this.tokens_metadata[t.token_address] = metadata
     }))
 
     const address_balances = {},
@@ -272,13 +277,22 @@ class App extends PureComponent {
     for (const key in links) {
       const [source, target] = key.split('_'),
             ts = links[key]
+      const source_amounts = {},
+            target_amounts = {}
+      for (const t of ts) {
+        source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
+        target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
+      }
+      
       this.links.push({
         source,
         target,
         transfers: ts,
         width: 1,
         loop: source === target,
-        type: 'link'
+        type: 'link',
+        source_label: Object.entries(source_amounts).map(([token_address, amount]) => `${ this.tokens_metadata[token_address].symbol }: ${ amount.times(Math.pow(10, -1 * this.tokens_metadata[token_address].decimals)).toFixed(3) }`).join(', '),
+        target_label: Object.entries(target_amounts).map(([token_address, amount]) => `${ this.tokens_metadata[token_address].symbol }: ${ amount.times(Math.pow(10, -1 * this.tokens_metadata[token_address].decimals)).toFixed(3) }`).join(', ')
       })
     }
   }
@@ -316,6 +330,7 @@ class App extends PureComponent {
     }
     visible_nodes.forEach(this.transform_node)
 
+    this.main_ctx.textAlign = 'center'
     this.main_drawer.draw(this.drawing_scale, visible_nodes, visible_links)
   }
 
