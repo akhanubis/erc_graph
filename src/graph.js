@@ -1,9 +1,9 @@
 /*
 TODO:
 element info con todos los balances
-agregar pocket network como rpc
-UI de filtrar por tokens
-UI de filtrar por address 
+reverse ens
+UI de filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link
+UI de filtrar por address, checkbox para que muestre o no otros transfers dentro de mismo link
 al filtrar por address, filtrar transfers que no eran de txs hashes filtrados 
 remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
@@ -467,35 +467,13 @@ class App extends PureComponent {
   }
 
   filter_links_by_address = links => {
-    if (Object.keys(this.state.addresses_filter).length) {
-      this.filtered_hashes = {}
-      for (const r of Object.values(this.receipts))
-        if (this.state.addresses_filter[r.from] || this.state.addresses_filter[r.to])
-          this.filtered_hashes[r.transactionHash] = true
-      filterInPlace(links, l => l.transfers.some(tf => this.filtered_hashes[tf.transaction_hash]))
-      for (const l of links) {
-        const source_amounts = {},
-              target_amounts = {},
-              icons = {},
-              source = l.source.full_name || l.source,
-              target = l.target.full_name || l.target
-        for (const t of l.transfers.filter(tf => this.filtered_hashes[tf.transaction_hash])) {
-          source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
-          target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
-          icons[t.token_address] = t.symbol.toLowerCase()
-        }
-        l.filtered_source_amounts = source_amounts
-        l.filtered_target_amounts = target_amounts
-        l.filtered_icons = Object.values(icons)
-      }
-    }
-    else
-      for (const l of links) {
-        l.filtered_source_amounts = l.source_amounts
-        l.filtered_target_amounts = l.target_amounts
-        l.filtered_icons = l.icons
-      }
-
+    if (!Object.keys(this.state.addresses_filter).length)
+      return links
+    this.filtered_hashes = {}
+    for (const r of Object.values(this.receipts))
+      if (this.state.addresses_filter[r.from] || this.state.addresses_filter[r.to])
+        this.filtered_hashes[r.transactionHash] = true
+    filterInPlace(links, l => l.transfers.some(tf => this.filtered_hashes[tf.transaction_hash]))
     return links
   }
 
@@ -508,7 +486,33 @@ class App extends PureComponent {
 
   filter_links = links => {
     const copy = [...links]
-    return this.filter_links_by_address(this.filter_links_by_token(this.filter_links_by_from_to(copy)))
+    const filtered = this.filter_links_by_address(this.filter_links_by_token(this.filter_links_by_from_to(copy)))
+    const has_token_filter = Object.keys(this.state.tokens_filter).length,
+          has_address_filter = Object.keys(this.state.addresses_filter).length
+    if (has_token_filter || has_address_filter) {
+      for (const l of filtered) {
+        const source_amounts = {},
+              target_amounts = {},
+              icons = {},
+              source = l.source.full_name || l.source,
+              target = l.target.full_name || l.target
+        for (const t of l.transfers.filter(tf => (!has_token_filter || this.state.tokens_filter[tf.token_address]) && (!has_address_filter || this.filtered_hashes[tf.transaction_hash]))) {
+          source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
+          target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
+          icons[t.token_address] = t.symbol.toLowerCase()
+        }
+        l.filtered_source_amounts = source_amounts
+        l.filtered_target_amounts = target_amounts
+        l.filtered_icons = Object.values(icons)
+      }
+    }
+    else
+      for (const l of filtered) {
+        l.filtered_source_amounts = l.source_amounts
+        l.filtered_target_amounts = l.target_amounts
+        l.filtered_icons = l.icons
+      }
+    return filtered
   }
 
   filter_nodes = (nodes, remaining_links) => {
