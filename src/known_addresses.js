@@ -48,6 +48,20 @@ const KNOWN_ADDRESSES = {
   '0x104c1e66c67c385e6095ffcc6227d75c761dc019': 'Curve.fi: sBTC Adapter',
   '0x02b3f51ac9202aa19be63d61a8c681579d6e3a51': 'Curve.fi: sBTC Adapter 2',
   '0xaeade605d01fe9a8e9c4b3aa0130a90d62167029': 'Curve.fi: sBTC Adapter 3',
+  '0x28a5da04a94f0501a6f77df8f8a9529d27b92744': 'UMA: Migrations',
+  '0x40f941e48a552bf496b154af6bf55725f18d77c3': 'UMA: Finder',
+  '0x04fa0d235c4abf4bcf4787af4cf447de572ef828': 'UMA: VotingToken',
+  '0xcf649d9da4d1362c4daea67573430bd6f945e570': 'UMA: IdentifierWhitelist',
+  '0x1d847fb6e04437151736a53f09b6e49713a52aad': 'UMA: Voting',
+  '0x3e532e6222afe9bcf02dcb87216802c75d5113ae': 'UMA: Registry',
+  '0x4e6ccb1da3c7844887f9a5af4e8450d9fd90317a': 'UMA: FinancialContractsAdmin',
+  '0x54f44ea3d2e7aa0ac089c4d8f7c93c27844057bf': 'UMA: Store',
+  '0x592349f7dedb2b75f9d4f194d4b7c16d82e507dc': 'UMA: Governor',
+  '0xe81eee5da165fa6863bbc82df66e62d18625d592': 'UMA: DesignatedVotingFactory',
+  '0x7c96d6235cfaaccac5d80fce74e6032b25dd1f03': 'UMA: TokenFactory',
+  '0xdbf90434df0b98219f87d112f37d74b1d90758c7': 'UMA: AddressWhitelist',
+  '0x38015ddb8b34c84934cff058f571349cc7d4139d': 'UMA: ExpiringMultiPartyLib',
+  '0x9a077d4fcf7b26a0514baa4cff0b481e9c35ce87': 'UMA: ExpiringMultiPartyCreator',
 }
 
 export default KNOWN_ADDRESSES

@@ -1,19 +1,15 @@
+import TOKEN_ICONS from './token_icons'
 import Drawer from './Drawer'
 import DataUtils from './data_utils'
+import ThinkingIcon from './assets/thinking.png'
 
-function importAll(r) {
-  const images = {}
-  for (let item of r.keys())
-    images[item.replace('./', '').split('.')[0].toLowerCase()] = r(item)
-  return images
-}
-const TOKEN_ICONS = importAll(require.context('./assets/tokens', false, /\.(png|jpe?g|svg)$/))
 const TOKEN_IMAGES = {}
-for (const symbol in TOKEN_ICONS) {
-  TOKEN_IMAGES[symbol] = new Image()
-  TOKEN_IMAGES[symbol].src = TOKEN_ICONS[symbol]
+for (const address in TOKEN_ICONS) {
+  TOKEN_IMAGES[address] = new Image()
+  TOKEN_IMAGES[address].src = TOKEN_ICONS[address]
 }
-
+TOKEN_IMAGES.thinking = new Image()
+TOKEN_IMAGES.thinking.src = ThinkingIcon
 const ICON_DIAMETER = 32
 
 class VectorDrawer extends Drawer {

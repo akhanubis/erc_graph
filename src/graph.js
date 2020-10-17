@@ -213,8 +213,7 @@ class App extends PureComponent {
       const latest_bn = (await window.web3.eth.getBlock('latest')).number
       for (let i = latest_bn - DEFAULT_HISTORY_SIZE + 1; i <= latest_bn; i++)
         this.pending_blocks.push(i)
-      if (window.ethereum)
-        this.listen_for_new_blocks()
+      this.listen_for_new_blocks(latest_bn)
       this.process_pending_blocks()
     }
     this.resize()
@@ -225,11 +224,27 @@ class App extends PureComponent {
     window.requestAnimationFrame(this.loop)
   }
 
-  listen_for_new_blocks = _ => {
-    window.web3.eth.subscribe('newBlockHeaders').on('data', b => {
-      console.log(`Block ${ b.number } received`)
-      this.pending_blocks.push(b.number)
-    })
+  listen_for_new_blocks = initial_bn => {
+    if (window.ethereum)
+      window.web3.eth.subscribe('newBlockHeaders').on('data', b => {
+        console.log(`Block ${ b.number } received`)
+        this.pending_blocks.push(b.number)
+      })
+    else {
+      setInterval((_ => {
+        let last_block = initial_bn
+        return async _ => {
+          const latest_block = (await window.web3.eth.getBlock('latest')).number
+          if (latest_block <= last_block)
+            return
+          for (let i = last_block + 1; i <= latest_block; i++) {
+            console.log(`Block ${ i } received`)
+            this.pending_blocks.push(i)
+          }
+          last_block = latest_block
+        }
+      })(), 10000)
+    }
   }
 
   process_pending_blocks = async _ => {
@@ -366,9 +381,9 @@ class App extends PureComponent {
       for (const t of l.transfers) {
         source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
         target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
-        icons_hash[t.token_address] = t.symbol.toLowerCase()
+        icons_hash[t.token_address] = true
       }
-      const icons = Object.values(icons_hash)
+      const icons = Object.keys(icons_hash)
       l.source_amounts = source_amounts
       l.filtered_source_amounts = source_amounts
       l.target_amounts = target_amounts
@@ -499,11 +514,11 @@ class App extends PureComponent {
         for (const t of l.transfers.filter(tf => (!has_token_filter || this.state.tokens_filter[tf.token_address]) && (!has_address_filter || this.filtered_hashes[tf.transaction_hash]))) {
           source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
           target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
-          icons[t.token_address] = t.symbol.toLowerCase()
+          icons[t.token_address] = true
         }
         l.filtered_source_amounts = source_amounts
         l.filtered_target_amounts = target_amounts
-        l.filtered_icons = Object.values(icons)
+        l.filtered_icons = Object.keys(icons)
       }
     }
     else
