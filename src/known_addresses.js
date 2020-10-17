@@ -1,4 +1,11 @@
+/*
+Etherscan scrap
+const a = Array.from(document.querySelector('#table-subcatid-1 tbody').querySelectorAll('tr'));
+a.map(row => `'${ row.querySelector('td a').innerHTML }': '${ row.querySelector('td.sorting_1').innerHTML }',`).join("\n")
+*/
 const KNOWN_ADDRESSES = {
+  '0x11111254369792b2ca5d084ab5eea397ca8fa48b': '1inch.exchange',
+  '0x0000000000004946c0e9f43f4dee607b0ef1fa1c': '1inch.exchange: CHI Token',
   '0x7a250d5630b4cf539739df2c5dacb4c659f2488d': 'Uniswap V2: Router',
   '0x5c69bee701ef814a2b6a3edd4b1652cb9cc5aa6f': 'Uniswap V2: Factory',
   '0x3f5ce5fbfe3e9af3971dd833d26ba9b5c936f0be': 'Binance',
@@ -15,7 +22,32 @@ const KNOWN_ADDRESSES = {
   '0xc2edad668740f1aa35e4d8f227fb8e17dca888cd': 'SushiSwap: MasterChef',
   '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f': 'SushiSwap: Router',
   '0x0000000000000000000000000000000000000000': 'Mint/Burn address',
-  '0x000000000000000000000000000000000000dead': 'Burn address'
+  '0x000000000000000000000000000000000000dead': 'Dead address',
+  '0x69fb7c45726cfe2badee8317005d3f94be838840': 'Curve.fi: bCrv Gauge',
+  '0x3b3ac5386837dc563660fb6a0937dfaa5924333b': 'Curve.fi: bCrv Token',
+  '0xb6c057591e073249f2d9d88ba59a46cfc9b59edb': 'Curve.fi: BUSD Deposit',
+  '0x79a8c46dea5ada233abaffd40f3a0a2b1e5a4f27': 'Curve.fi: BUSD Swap',
+  '0xc1db00a8e5ef7bfa476395cdbcc98235477cde4e': 'Curve.fi: Calc',
+  '0x7ca5b0a2910b33e9759dc7ddb0413949071d7575': 'Curve.fi: cCrv Gauge',
+  '0x845838df265dcd2c412a1dc9e959c7d08537f8a2': 'Curve.fi: cCrv Token',
+  '0xeb21209ae4c2c9ff2a86aca31e123764a3b6bc06': 'Curve.fi: Compound Deposit',
+  '0xa2b47e3d5c44877cca798226b7b8118f9bfb7a56': 'Curve.fi: Compound Swap',
+  '0xd533a949740bb3306d119cc777fa900ba034cd52': 'Curve.fi: CRV Token',
+  '0x2f50d538606fa9edd2b11e2446beb18c9d5846bb': 'Curve.fi: Gauge Controller',
+  '0xa50ccc70b6a011cffddf45057e39679379187287': 'Curve.fi: PAX Deposit',
+  '0x06364f10b501e868329afbc005b3492902d6c763': 'Curve.fi: PAX Swap',
+  '0x64e3c23bfc40722d3b649844055f1d51c1ac041d': 'Curve.fi: pCrv Gauge',
+  '0xd905e2eaebe188fc92179b6350807d8bd91db0d8': 'Curve.fi: pCrv Token',
+  '0x7002b727ef8f5571cb5f9d70d13dbeeb4dfae9d1': 'Curve.fi: Registry',
+  '0x9fe350dfa5f66bc086243f21a8f0932514316627': 'Curve.fi: Ren Adapter',
+  '0x26d9980571e77ffb0349f9c801dd7ca9951fb656': 'Curve.fi: Ren Adapter 2',
+  '0x73ab2bd10ad10f7174a1ad5afae3ce3d991c5047': 'Curve.fi: Ren Adapter 3',
+  '0x93054188d876f558f4a66b2ef1d97d16edf0895b': 'Curve.fi: REN Swap',
+  '0xb1f2cdec61db658f091671f5f199635aef202cac': 'Curve.fi: renCrv Gauge',
+  '0x49849c98ae39fff122806c06791fa73784fb3675': 'Curve.fi: renCrv Token',
+  '0x104c1e66c67c385e6095ffcc6227d75c761dc019': 'Curve.fi: sBTC Adapter',
+  '0x02b3f51ac9202aa19be63d61a8c681579d6e3a51': 'Curve.fi: sBTC Adapter 2',
+  '0xaeade605d01fe9a8e9c4b3aa0130a90d62167029': 'Curve.fi: sBTC Adapter 3',
 }
 
 export default KNOWN_ADDRESSES

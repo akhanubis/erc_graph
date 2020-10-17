@@ -49,7 +49,7 @@ class VectorDrawer extends Drawer {
           to = DataUtils.point_at_edge(l.target, l.target.radius, dx, dy, l.target.x < l.source.x, this.drawing_scale)
       this.draw_line(from, to)
       if (draw_icons)
-        this.draw_icons(from, to, l.icons)
+        this.draw_icons(from, to, l.filtered_icons)
     }
   }
 

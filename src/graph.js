@@ -1,12 +1,18 @@
 /*
 TODO:
 element info con todos los balances
+agregar pocket network como rpc
 UI de filtrar por tokens
 UI de filtrar por address 
+al filtrar por address, filtrar transfers que no eran de txs hashes filtrados 
 remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
+mempool version
 obtener internal tx usando https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=0x0414c8df68b8086a36c3c7990196ab9c48fa455678b132094b085d9091656b05&apikey=YourApiKeyToken
 chequear https://etherscan.io/tx/0xc82a33cb8ccaae9807cab35fd9e37e0ea9eeccf98c60bd669f5c48d7d5eda1d3
+filter para filtrar por address y poder traer history mas facil
+filter para filtrar por token y poder traer history mas facil
+backend to request everything only once
 */
 import "regenerator-runtime/runtime.js"
 import React, { PureComponent } from 'react'
@@ -25,6 +31,7 @@ import KNOWN_ADDRESSES from './known_addresses'
 import pSBC from './psbc'
 import 'babel-polyfill'
 
+import './css/bootstrap.min.css'
 import './css/index.css'
 
 const
@@ -34,7 +41,10 @@ const
   WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
   SEMANTIC_ZOOM_TRESHOLD = 1.5,
   DEFAULT_HOVER_COLOR = '#000000',
-  FPS_UPDATE_WINDOW = 30
+  FPS_UPDATE_WINDOW = 30,
+  DEFAULT_HISTORY_SIZE = 10,
+  POCKET_RPC_URL = process.env.REACT_POCKET_RPC_URL
+  
 
 const hextoAscii = hex => {
   let str = ''
@@ -86,14 +96,16 @@ const fetch_token_metadata = (_ => {
 const link_key = transfer => transfer.sender > transfer.receiver ? `${ transfer.sender }_${ transfer.receiver }` : `${ transfer.receiver }_${ transfer.sender }`
 
 const start_web3 = _ => {
-  if (!window.ethereum) {
-    alert('Missing MetaMask')
-    return
+  if (window.ethereum) {
+    window.web3 = new web3(window.ethereum)
+    window.ethereum.enable()
+    return true
   }
-
-  window.web3 = new web3(window.ethereum)
-  window.ethereum.enable()
-  return true
+  else {
+    window.web3 = new web3(POCKET_RPC_URL)
+    console.log('No MetaMask detected, using Pocket Network')
+    return true
+  }
 }
 
 class App extends PureComponent {
@@ -109,9 +121,12 @@ class App extends PureComponent {
     this.force = null
     this.links = []
     this.nodes = []
+    this.receipts = {}
     this.filtered_links = []
     this.filtered_nodes = []
+    this.filtered_hashes = {}
     this.address_to_node = {}
+    this.link_key_to_link = {}
     this.mouse_pointer = {
       x: 0,
       y: 0
@@ -128,6 +143,14 @@ class App extends PureComponent {
       addresses_filter: {
         //'0x0ffeb87106910eefc69c1902f411b431ffc424ff': true
         //'0xe33c8e3a0d14a81f0dd7e174830089e82f65fc85': true
+        //'0x7a250d5630b4cf539739df2c5dacb4c659f2488d': true
+        //'0x11111254369792b2ca5d084ab5eea397ca8fa48b': true
+      },
+      from_to_tx_filter: {
+        //'0x0ffeb87106910eefc69c1902f411b431ffc424ff': true
+        //'0xe33c8e3a0d14a81f0dd7e174830089e82f65fc85': true
+        //'0x7a250d5630b4cf539739df2c5dacb4c659f2488d': true
+        //'0x11111254369792b2ca5d084ab5eea397ca8fa48b': true
       },
       tokens_filter: {
         //'0xdac17f958d2ee523a2206206994597c13d831ec7': true
@@ -183,11 +206,17 @@ class App extends PureComponent {
     if (!start_web3())
       return
     
-    if (this.transaction_hash)
+    if (this.transaction_hash) {
       await this.load_transaction(this.transaction_hash)
+      this.after_load()
+    }
     else {
-      this.pending_blocks.push('latest')
-      this.listen_for_new_blocks()
+      const latest_bn = (await window.web3.eth.getBlock('latest')).number
+      for (let i = latest_bn - DEFAULT_HISTORY_SIZE + 1; i <= latest_bn; i++)
+        this.pending_blocks.push(i)
+      if (window.ethereum)
+        this.listen_for_new_blocks()
+      this.process_pending_blocks()
     }
     this.resize()
     this.restart_simulation()
@@ -202,13 +231,13 @@ class App extends PureComponent {
       console.log(`Block ${ b.number } received`)
       this.pending_blocks.push(b.number)
     })
-    this.process_pending_blocks()
   }
 
   process_pending_blocks = async _ => {
     const bn = this.pending_blocks.shift()
     if (bn) {
       await this.load_block(bn)
+      this.after_load()
       this.restart_simulation()
     }
     setTimeout(this.process_pending_blocks, 1000)
@@ -222,9 +251,12 @@ class App extends PureComponent {
 
   load_transaction = async hash => {
     const receipt = await window.web3.eth.getTransactionReceipt(hash)
+    if (!receipt)
+      return
+    this.receipts[hash] = receipt
 
     const transfers = []
-    for (const l of ((receipt || {}).logs || [])) {
+    for (const l of (receipt.logs || [])) {
       try {
         if (l.topics[0] === TRANSFER_TOPIC)
           transfers.push({
@@ -237,13 +269,6 @@ class App extends PureComponent {
         else if (l.address.toLowerCase() === WETH_ADDRESS && l.topics[0] === WETH_WRAP_TOPIC) {
           const wrapper = `0x${ l.topics[1].substr(26, 40) }`,
                 amount = new BigNumber(l.data)
-          // transfers.push({
-          //   token_address: 'ETH',
-          //   sender: wrapper,
-          //   receiver: WETH_ADDRESS,
-          //   amount,
-          //   transaction_hash: hash
-          // })
           transfers.push({
             token_address: WETH_ADDRESS,
             sender: WETH_ADDRESS,
@@ -262,13 +287,6 @@ class App extends PureComponent {
             amount,
             transaction_hash: hash
           })
-          // transfers.push({
-          //   token_address: 'ETH',
-          //   sender: WETH_ADDRESS,
-          //   receiver: unwrapper,
-          //   amount,
-          //   transaction_hash: hash
-          // })
         }
       }
       catch(e) {
@@ -312,33 +330,52 @@ class App extends PureComponent {
         this.address_to_node[address] = node
         this.set_node_color_from_type(address)
       }
-      for (const token_address in address_balances[address]) {
-        const n = this.address_to_node[address]
+      const n = this.address_to_node[address]
+      for (const token_address in address_balances[address])
         n.balances[token_address] = (n.balances[token_address] || new BigNumber(0)).plus(address_balances[address][token_address])
-      }
     }
 
     for (const key in links) {
-      const [source, target] = key.split('_'),
+      const [source, target] = key.split('_')
+      if (!this.link_key_to_link[key]) {
+        const link = {
+          source,
+          target,
+          key,
+          transfers: [],
+          width: 1,
+          loop: source === target,
+          type: 'link'
+        }
+        this.links.push(link)
+        this.link_key_to_link[key] = link
+      }
+
+      const l = this.link_key_to_link[key],
             ts = links[key]
-      const source_amounts = {},
+      for (const t of ts)
+        l.transfers.push(t)
+    }
+  }
+
+  after_load = _ => {
+    for (const l of this.links) {
+      const [source, target] = l.key.split('_'),
+            source_amounts = {},
             target_amounts = {},
-            symbols = {}
-      for (const t of ts) {
+            icons_hash = {}
+      for (const t of l.transfers) {
         source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
         target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
-        symbols[t.token_address] = t.symbol
+        icons_hash[t.token_address] = t.symbol.toLowerCase()
       }
-      
-      this.links.push({
-        source,
-        target,
-        transfers: ts,
-        width: 1,
-        loop: source === target,
-        type: 'link',
-        icons: Object.values(symbols).map(s => s.toLowerCase())
-      })
+      const icons = Object.values(icons_hash)
+      l.source_amounts = source_amounts
+      l.filtered_source_amounts = source_amounts
+      l.target_amounts = target_amounts
+      l.filtered_target_amounts = target_amounts
+      l.icons = icons
+      l.filtered_icons = icons
     }
   }
 
@@ -424,22 +461,55 @@ class App extends PureComponent {
     this.force.force('center', d3.forceCenter(0.5 * this.canvas.clientWidth, 0.5 * this.canvas.clientHeight))
   }
 
-  filter_links_by_address = links => {
-    if (Object.keys(this.state.addresses_filter).length)
+  filter_links_by_from_to = links => {
+    if (Object.keys(this.state.from_to_tx_filter).length)
       filterInPlace(links, l => this.state.addresses_filter[l.source.full_name || l.source] || this.state.addresses_filter[l.target.full_name || l.target] || this.state.addresses_filter[l.source.name] || this.state.addresses_filter[l.target.name])
+    return links
+  }
+
+  filter_links_by_address = links => {
+    if (Object.keys(this.state.addresses_filter).length) {
+      this.filtered_hashes = {}
+      for (const r of Object.values(this.receipts))
+        if (this.state.addresses_filter[r.from] || this.state.addresses_filter[r.to])
+          this.filtered_hashes[r.transactionHash] = true
+      filterInPlace(links, l => l.transfers.some(tf => this.filtered_hashes[tf.transaction_hash]))
+      for (const l of links) {
+        const source_amounts = {},
+              target_amounts = {},
+              icons = {},
+              source = l.source.full_name || l.source,
+              target = l.target.full_name || l.target
+        for (const t of l.transfers.filter(tf => this.filtered_hashes[tf.transaction_hash])) {
+          source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
+          target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
+          icons[t.token_address] = t.symbol.toLowerCase()
+        }
+        l.filtered_source_amounts = source_amounts
+        l.filtered_target_amounts = target_amounts
+        l.filtered_icons = Object.values(icons)
+      }
+    }
+    else
+      for (const l of links) {
+        l.filtered_source_amounts = l.source_amounts
+        l.filtered_target_amounts = l.target_amounts
+        l.filtered_icons = l.icons
+      }
+
     return links
   }
 
   filter_links_by_token = links => {
     if (!Object.keys(this.state.tokens_filter).length)
       return links
-    filterInPlace(links, t => t.transfers.some(tf => this.state.tokens_filter[tf.token_address]))
+    filterInPlace(links, l => l.transfers.some(tf => this.state.tokens_filter[tf.token_address]))
     return links
   }
 
   filter_links = links => {
     const copy = [...links]
-    return this.filter_links_by_address(this.filter_links_by_token(copy))
+    return this.filter_links_by_address(this.filter_links_by_token(this.filter_links_by_from_to(copy)))
   }
 
   filter_nodes = (nodes, remaining_links) => {
