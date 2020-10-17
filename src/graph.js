@@ -3,7 +3,7 @@ TODO:
 element info con todos los balances
 UI de filtrar por tokens
 UI de filtrar por address 
-remover bloq viejos
+remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
 obtener internal tx usando https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=0x0414c8df68b8086a36c3c7990196ab9c48fa455678b132094b085d9091656b05&apikey=YourApiKeyToken
 chequear https://etherscan.io/tx/0xc82a33cb8ccaae9807cab35fd9e37e0ea9eeccf98c60bd669f5c48d7d5eda1d3
@@ -103,8 +103,8 @@ class App extends PureComponent {
 
     this.transaction_hash = url_params.get('hash')
     this.initialized = false
+    this.pending_blocks = []
     this.tokens_metadata = {}
-    this.loading_blocks = {}
     this.fps = 0
     this.force = null
     this.links = []
@@ -186,7 +186,7 @@ class App extends PureComponent {
     if (this.transaction_hash)
       await this.load_transaction(this.transaction_hash)
     else {
-      await this.load_block('latest')
+      this.pending_blocks.push('latest')
       this.listen_for_new_blocks()
     }
     this.resize()
@@ -198,21 +198,26 @@ class App extends PureComponent {
   }
 
   listen_for_new_blocks = _ => {
-    window.web3.eth.subscribe('newBlockHeaders').on('data', async b => {
+    window.web3.eth.subscribe('newBlockHeaders').on('data', b => {
       console.log(`Block ${ b.number } received`)
-      this.force.stop()
-      await this.load_block(b.number)
-      if (!Object.keys(this.loading_blocks).length)
-        this.restart_simulation()
+      this.pending_blocks.push(b.number)
     })
+    this.process_pending_blocks()
+  }
+
+  process_pending_blocks = async _ => {
+    const bn = this.pending_blocks.shift()
+    if (bn) {
+      await this.load_block(bn)
+      this.restart_simulation()
+    }
+    setTimeout(this.process_pending_blocks, 1000)
   }
 
   load_block = async bn => {
-    this.loading_blocks[bn] = true
     const block = await window.web3.eth.getBlock(bn)
     await Promise.all(block.transactions.map(tx => this.load_transaction(tx))).catch(console.error)
     console.log(`Block ${ block.number } loaded`)
-    delete this.loading_blocks[bn]
   }
 
   load_transaction = async hash => {
