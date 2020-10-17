@@ -2,6 +2,8 @@ const HtmlWebPackPlugin = require("html-webpack-plugin")
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const TerserJSPlugin = require('terser-webpack-plugin')
+const webpack = require('webpack')
+require('dotenv').config()
 
 const dev_mode = process.env.WEBPACK_DEV_SERVER === 'true'
 
@@ -71,6 +73,9 @@ module.exports = {
     new MiniCssExtractPlugin({
       filename: dev_mode ? '[name].css' : '[name].[hash].css',
       chunkFilename: dev_mode ? '[id].css' : '[id].[hash].css'
+    }),
+    new webpack.DefinePlugin({
+      POCKET_RPC_URL: JSON.stringify(process.env.POCKET_RPC_URL)
     })
   ],
   optimization: {
