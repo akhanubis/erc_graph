@@ -76,6 +76,7 @@ const DataUtils = (() => {
 
   const point_link_collision = (point, link, drawing_scale) => link.loop ? point_bezier_collision(point, link.source, drawing_scale) : point_segment_collision(point, link.source, link.target, 5, drawing_scale)
 
+  const segment_length = (from, to) => Math.sqrt((to.x - from.x) * (to.x - from.x) + (to.y - from.y) * (to.y - from.y))
   return {
     point_at_edge: point_at_edge,
     self_link_curve: self_link_curve,
@@ -83,7 +84,8 @@ const DataUtils = (() => {
     point_circle_collision: point_circle_collision,
     point_segment_collision: point_segment_collision,
     point_bezier_collision: point_bezier_collision,
-    point_link_collision: point_link_collision
+    point_link_collision: point_link_collision,
+    segment_length
   }
 })()
 

@@ -131,7 +131,7 @@ class App extends PureComponent {
 
     this.force = d3.forceSimulation()
       .force("charge", d3.forceManyBody().distanceMax(50000).strength(n => -20 - 30 * 2 * (n.radius - 5)))
-      .force("link", d3.forceLink(this.links).distance(60).id(d => d.full_name))
+      .force("link", d3.forceLink(this.links).distance(300).id(d => d.full_name))
       .force("x", d3.forceX())
       .force("y", d3.forceY())
       .force("center", d3.forceCenter(0, 0))
@@ -278,10 +278,12 @@ class App extends PureComponent {
       const [source, target] = key.split('_'),
             ts = links[key]
       const source_amounts = {},
-            target_amounts = {}
+            target_amounts = {},
+            symbols = {}
       for (const t of ts) {
         source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
         target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
+        symbols[t.token_address] = t.symbol
       }
       
       this.links.push({
@@ -291,8 +293,9 @@ class App extends PureComponent {
         width: 1,
         loop: source === target,
         type: 'link',
-        source_label: Object.entries(source_amounts).map(([token_address, amount]) => `${ this.tokens_metadata[token_address].symbol }: ${ amount.times(Math.pow(10, -1 * this.tokens_metadata[token_address].decimals)).toFixed(3) }`).join(', '),
-        target_label: Object.entries(target_amounts).map(([token_address, amount]) => `${ this.tokens_metadata[token_address].symbol }: ${ amount.times(Math.pow(10, -1 * this.tokens_metadata[token_address].decimals)).toFixed(3) }`).join(', ')
+        //source_label: Object.entries(source_amounts).map(([token_address, amount]) => `${ this.tokens_metadata[token_address].symbol }: ${ amount.times(Math.pow(10, -1 * this.tokens_metadata[token_address].decimals)).toFixed(3) }`).join(', '),
+        //target_label: Object.entries(target_amounts).map(([token_address, amount]) => `${ this.tokens_metadata[token_address].symbol }: ${ amount.times(Math.pow(10, -1 * this.tokens_metadata[token_address].decimals)).toFixed(3) }`).join(', '),
+        icons: Object.values(symbols).map(s => s.toLowerCase())
       })
     }
   }
@@ -330,7 +333,6 @@ class App extends PureComponent {
     }
     visible_nodes.forEach(this.transform_node)
 
-    this.main_ctx.textAlign = 'center'
     this.main_drawer.draw(this.drawing_scale, visible_nodes, visible_links)
   }
 

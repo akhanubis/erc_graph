@@ -1,8 +1,20 @@
-import CanvasTxt from 'canvas-txt'
 import Drawer from './Drawer'
 import DataUtils from './data_utils'
 
-// const LABEL_MIN_DISTANCE = 100
+function importAll(r) {
+  const images = {}
+  for (let item of r.keys())
+    images[item.replace('./', '').split('.')[0].toLowerCase()] = r(item)
+  return images
+}
+const TOKEN_ICONS = importAll(require.context('./assets/tokens', false, /\.(png|jpe?g|svg)$/))
+const TOKEN_IMAGES = {}
+for (const symbol in TOKEN_ICONS) {
+  TOKEN_IMAGES[symbol] = new Image()
+  TOKEN_IMAGES[symbol].src = TOKEN_ICONS[symbol]
+}
+
+const ICON_DIAMETER = 32
 
 class VectorDrawer extends Drawer {
   node_color = n => {
@@ -30,12 +42,9 @@ class VectorDrawer extends Drawer {
       let dx = l.target.x - l.source.x,
           dy = l.target.y - l.source.y,
           from = DataUtils.point_at_edge(l.source, l.source.radius, dx, dy, l.source.x < l.target.x, this.drawing_scale),
-          to = DataUtils.point_at_edge(l.target, l.target.radius, dx, dy, l.target.x < l.source.x, this.drawing_scale),
-          source_label = DataUtils.point_at_edge(l.source, l.source.radius + 5, dx, dy, l.source.x < l.target.x, this.drawing_scale),
-          target_label = DataUtils.point_at_edge(l.target, l.target.radius + 5, dx, dy, l.target.x < l.source.x, this.drawing_scale)
+          to = DataUtils.point_at_edge(l.target, l.target.radius, dx, dy, l.target.x < l.source.x, this.drawing_scale)
       this.draw_line(from, to)
-      this.draw_label(source_label, l.source_label)
-      this.draw_label(target_label, l.target_label)
+      this.draw_icons(from, to, l.icons)
     }
   }
 
@@ -59,11 +68,34 @@ class VectorDrawer extends Drawer {
     this.ctx.stroke()
   }
 
-  draw_label = (at, text) => {
-    const box_x = 100 * this.drawing_scale
-    const box_y = 100 * this.drawing_scale
-    CanvasTxt.fontSize = 10 * this.drawing_scale
-    CanvasTxt.drawText(this.ctx, text, at.x - 0.5 * box_x, at.y - 0.5 * box_y, box_x, box_y)
+  draw_icons = (from, to, icons) => {
+    const diameter = ICON_DIAMETER * this.drawing_scale
+
+    const link_length = DataUtils.segment_length(from, to)
+    const initial_offset = 0.5 * diameter + Math.max(0, 0.5 * (link_length - diameter * icons.length))
+    const per_icon_offset = icons.length > 1 && icons.length * diameter > link_length ? (link_length - diameter) / (icons.length - 1) : diameter
+
+    const angle = Math.atan((to.y - from.y) / (to.x - from.x))
+
+    const from_left_to = to.x > from.x ? 1 : -1
+    const initial_offset_2d = {
+      x: Math.cos(angle) * initial_offset * from_left_to,
+      y: Math.sin(angle) * initial_offset * from_left_to
+    }
+    const per_icon_offset_2d = {
+      x: Math.cos(angle) * per_icon_offset * from_left_to,
+      y: Math.sin(angle) * per_icon_offset * from_left_to
+    }
+
+    icons.forEach((icon, i) => {
+      this.ctx.drawImage(
+        TOKEN_IMAGES[icon] || TOKEN_IMAGES.thinking,
+        from.x - 0.5 * diameter + initial_offset_2d.x + per_icon_offset_2d.x * i,
+        from.y - 0.5 * diameter + initial_offset_2d.y + per_icon_offset_2d.y * i,
+        diameter,
+        diameter
+      )
+    })
   }
 }
 
