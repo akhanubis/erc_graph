@@ -18,10 +18,12 @@ const ICON_DIAMETER = 32
 
 class VectorDrawer extends Drawer {
   node_color = n => {
-    return '#CCCCCC'
+    if (n.type === 'contract')
+      return '#2099c9'
+    return '#6FC6E8'
   }
 
-  draw_node = (n, hovered = false, clicked = false) => {
+  draw_node = (n, hovered = false, clicked = false, draw_name = true) => {
     this.ctx.beginPath()
     this.ctx.lineWidth = (hovered || clicked ? 3 : 1) * this.drawing_scale
     this.ctx.strokeStyle = n.outline_color
@@ -29,9 +31,11 @@ class VectorDrawer extends Drawer {
     this.draw_circle(n)
     this.ctx.fill()
     this.ctx.stroke()
+    if (draw_name && this.drawing_scale > 0.5)
+      this.draw_text(n, n.name)
   }
 
-  draw_link = (l, hovered = false, clicked = false) => {
+  draw_link = (l, hovered = false, clicked = false, draw_icons = true) => {
     this.ctx.lineWidth = l.width * this.drawing_scale
     const c = hovered || clicked ? this.link_hover_color : Drawer.LINK_COLOR
     this.ctx.strokeStyle = c
@@ -44,7 +48,8 @@ class VectorDrawer extends Drawer {
           from = DataUtils.point_at_edge(l.source, l.source.radius, dx, dy, l.source.x < l.target.x, this.drawing_scale),
           to = DataUtils.point_at_edge(l.target, l.target.radius, dx, dy, l.target.x < l.source.x, this.drawing_scale)
       this.draw_line(from, to)
-      this.draw_icons(from, to, l.icons)
+      if (draw_icons)
+        this.draw_icons(from, to, l.icons)
     }
   }
 
@@ -96,6 +101,13 @@ class VectorDrawer extends Drawer {
         diameter
       )
     })
+  }
+
+  draw_text = (at, text) => {
+    this.ctx.fillStyle = '#000000'
+    this.ctx.textAlign = 'center'
+    this.ctx.fontSize = 12 * this.drawing_scale
+    this.ctx.fillText(text, at.x, at.y + 4)
   }
 }
 

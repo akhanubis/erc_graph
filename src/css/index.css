@@ -65,6 +65,14 @@ html, body, #root, .main-container, .canvas-container {
   color: #AAAAAA;
 }
 
+.gas-container {
+  z-index: 3;
+  position: absolute;
+  right: 5px;
+  bottom: 20px;
+  color: #AAAAAA;
+}
+
 .foreground {
   z-index: 10;
 }

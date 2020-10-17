@@ -14,8 +14,8 @@ const Gas = _ => {
   }, [])
 
   return (
-    <div>Gas: { price.standard } Gwei</div>
+    <div className="gas-container no-select">{ price.standard } GWEI</div>
   )
 }
 
-export default Gas
+export default React.memo(Gas)

@@ -1,7 +1,7 @@
 import React from 'react'
 
-const Fps = ({ fps }) => {
-  const label = `${ fps || 0 } FPS`
+const Fps = ({ fps, alpha, running }) => {
+  const label = `${ fps || 0 } FPS - ${ running ? `RUNNING (${ alpha.toFixed(2) })` : 'IDLE'}`
   return (
     <div className="fps-container no-select">{label}</div>
   )
