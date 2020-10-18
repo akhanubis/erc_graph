@@ -42,9 +42,10 @@ const
   SEMANTIC_ZOOM_TRESHOLD = 1.5,
   DEFAULT_HOVER_COLOR = '#000000',
   FPS_UPDATE_WINDOW = 30,
-  DEFAULT_HISTORY_SIZE = 5,
+  DEFAULT_HISTORY_SIZE = 10,
   METAMASK_ENABLED = window.ethereum,
-  POCKET_MAX_CONCURRENCY = 50
+  POCKET_MAX_CONCURRENCY = 50,
+  METAMASK_MAX_CONCURRENCY = 300
 
 const link_key = transfer => transfer.sender > transfer.receiver ? `${ transfer.sender }_${ transfer.receiver }` : `${ transfer.receiver }_${ transfer.sender }`
 
@@ -167,18 +168,18 @@ class App extends PureComponent {
     }
     this.resize()
     this.restart_simulation()
-    this.setState({ loading: false })
-
+    
     this.previous_ts = window.performance.now()
     window.requestAnimationFrame(this.loop)
   }
 
-  listen_for_new_logs = initial_bn => {
-    if (METAMASK_ENABLED)
+  listen_for_new_logs = async initial_bn => {
+    if (METAMASK_ENABLED) {
       window.web3.eth.subscribe('logs', {
         fromBlock: initial_bn - DEFAULT_HISTORY_SIZE + 1,
         topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
       }).on('data', log => this.pending_logs.push(log))
+    }
     else {
       setInterval((_ => {
         let last_block = initial_bn - 1
@@ -199,17 +200,18 @@ class App extends PureComponent {
   }
 
   process_pending_logs = async _ => {
-    const logs = this.pending_logs.splice(0)
-    await promisesInChunk(logs, METAMASK_ENABLED ? 9999 : POCKET_MAX_CONCURRENCY, l => this.load_transaction(l.transactionHash))
+    const logs = this.pending_logs.splice(0),
+          new_txs = logs.map(l => l.transactionHash).filter(h => !this.receipts[h]),
+          unique_new_txs = {}
+    for (const tx of new_txs)
+      unique_new_txs[tx] = true
+    if (logs.length)
+      this.setState({ loading: true })
+    await promisesInChunk(Object.keys(unique_new_txs), METAMASK_ENABLED ? METAMASK_MAX_CONCURRENCY : POCKET_MAX_CONCURRENCY, this.load_transaction)
+    this.setState({ loading: false })
     this.after_load()
     this.restart_simulation()
     setTimeout(this.process_pending_logs, 1000)
-  }
-
-  load_block = async bn => {
-    const block = await window.web3.eth.getBlock(bn)
-    await Promise.all(block.transactions.map(tx => this.load_transaction(tx))).catch(console.error)
-    console.log(`Block ${ block.number } loaded`)
   }
 
   load_transaction = async hash => {
@@ -308,6 +310,7 @@ class App extends PureComponent {
         this.link_key_to_link[key] = link
       }
 
+      
       const l = this.link_key_to_link[key],
             ts = links[key]
       for (const t of ts)
@@ -420,7 +423,7 @@ class App extends PureComponent {
 
   filter_links_by_from_to = links => {
     if (Object.keys(this.state.from_to_tx_filter).length)
-      filterInPlace(links, l => this.state.addresses_filter[l.source.full_name || l.source] || this.state.addresses_filter[l.target.full_name || l.target] || this.state.addresses_filter[l.source.name] || this.state.addresses_filter[l.target.name])
+      filterInPlace(links, l => this.state.from_to_tx_filter[l.source.full_name || l.source] || this.state.from_to_tx_filter[l.target.full_name || l.target] || this.state.from_to_tx_filter[l.source.name] || this.state.from_to_tx_filter[l.target.name])
     return links
   }
 
