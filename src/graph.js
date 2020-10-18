@@ -26,7 +26,7 @@ import LoadingPanel from './LoadingPanel'
 import Drawer from './VectorDrawer'
 import DataUtils from './data_utils'
 import TokensMetadata from "./TokensMetadata"
-import { filterInPlace } from './utils'
+import { filterInPlace, promisesInChunk } from './utils'
 import addressLabel from './address_label'
 import pSBC from './psbc'
 import 'babel-polyfill'
@@ -42,12 +42,14 @@ const
   SEMANTIC_ZOOM_TRESHOLD = 1.5,
   DEFAULT_HOVER_COLOR = '#000000',
   FPS_UPDATE_WINDOW = 30,
-  DEFAULT_HISTORY_SIZE = 5
+  DEFAULT_HISTORY_SIZE = 5,
+  METAMASK_ENABLED = window.ethereum,
+  POCKET_MAX_CONCURRENCY = 50
 
 const link_key = transfer => transfer.sender > transfer.receiver ? `${ transfer.sender }_${ transfer.receiver }` : `${ transfer.receiver }_${ transfer.sender }`
 
 const start_web3 = _ => {
-  if (window.ethereum) {
+  if (METAMASK_ENABLED) {
     window.web3 = new web3(window.ethereum)
     window.ethereum.enable()
   }
@@ -64,7 +66,7 @@ class App extends PureComponent {
 
     this.transaction_hash = url_params.get('hash')
     this.initialized = false
-    this.pending_blocks = []
+    this.pending_logs = []
     this.tokens_metadata = {}
     this.fps = 0
     this.force = null
@@ -160,10 +162,8 @@ class App extends PureComponent {
     }
     else {
       const latest_bn = (await window.web3.eth.getBlock('latest')).number
-      for (let i = latest_bn - DEFAULT_HISTORY_SIZE + 1; i <= latest_bn; i++)
-        this.pending_blocks.push(i)
-      this.listen_for_new_blocks(latest_bn)
-      this.process_pending_blocks()
+      this.listen_for_new_logs(latest_bn)
+      this.process_pending_logs()
     }
     this.resize()
     this.restart_simulation()
@@ -173,37 +173,37 @@ class App extends PureComponent {
     window.requestAnimationFrame(this.loop)
   }
 
-  listen_for_new_blocks = initial_bn => {
-    if (window.ethereum)
-      window.web3.eth.subscribe('newBlockHeaders').on('data', b => {
-        console.log(`Block ${ b.number } received`)
-        this.pending_blocks.push(b.number)
-      })
+  listen_for_new_logs = initial_bn => {
+    if (METAMASK_ENABLED)
+      window.web3.eth.subscribe('logs', {
+        fromBlock: initial_bn - DEFAULT_HISTORY_SIZE + 1,
+        topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
+      }).on('data', log => this.pending_logs.push(log))
     else {
       setInterval((_ => {
-        let last_block = initial_bn
+        let last_block = initial_bn - 1
         return async _ => {
           const latest_block = (await window.web3.eth.getBlock('latest')).number
           if (latest_block <= last_block)
             return
-          for (let i = last_block + 1; i <= latest_block; i++) {
-            console.log(`Block ${ i } received`)
-            this.pending_blocks.push(i)
-          }
+          const logs = await window.web3.eth.getPastLogs({
+            fromBlock: last_block + 1,
+            topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
+          })
+          for (const l of logs)
+            this.pending_logs.push(l)
           last_block = latest_block
         }
       })(), 10000)
     }
   }
 
-  process_pending_blocks = async _ => {
-    const bn = this.pending_blocks.shift()
-    if (bn) {
-      await this.load_block(bn)
-      this.after_load()
-      this.restart_simulation()
-    }
-    setTimeout(this.process_pending_blocks, 1000)
+  process_pending_logs = async _ => {
+    const logs = this.pending_logs.splice(0)
+    await promisesInChunk(logs, METAMASK_ENABLED ? 9999 : POCKET_MAX_CONCURRENCY, l => this.load_transaction(l.transactionHash))
+    this.after_load()
+    this.restart_simulation()
+    setTimeout(this.process_pending_logs, 1000)
   }
 
   load_block = async bn => {
