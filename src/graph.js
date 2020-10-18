@@ -7,7 +7,7 @@ UI de filtrar por address, checkbox para que muestre o no otros transfers dentro
 al filtrar por address, filtrar transfers que no eran de txs hashes filtrados 
 remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
-mempool version
+mempool version, va metiendo tx por tx y cuando se mina un bloque saca todas las que fueron minadas
 obtener internal tx usando https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=0x0414c8df68b8086a36c3c7990196ab9c48fa455678b132094b085d9091656b05&apikey=YourApiKeyToken
 chequear https://etherscan.io/tx/0xc82a33cb8ccaae9807cab35fd9e37e0ea9eeccf98c60bd669f5c48d7d5eda1d3
 filter para filtrar por address y poder traer history mas facil
@@ -20,14 +20,14 @@ import { render } from 'react-dom'
 import web3 from 'web3'
 import * as d3 from 'd3'
 import BigNumber from 'bignumber.js'
-import ERC20 from './ERC20'
 import Fps from './Fps'
 import Gas from './Gas'
 import LoadingPanel from './LoadingPanel'
 import Drawer from './VectorDrawer'
 import DataUtils from './data_utils'
+import TokensMetadata from "./TokensMetadata"
 import { filterInPlace } from './utils'
-import KNOWN_ADDRESSES from './known_addresses'
+import addressLabel from './address_label'
 import pSBC from './psbc'
 import 'babel-polyfill'
 
@@ -43,54 +43,6 @@ const
   DEFAULT_HOVER_COLOR = '#000000',
   FPS_UPDATE_WINDOW = 30,
   DEFAULT_HISTORY_SIZE = 5
-  
-
-const hextoAscii = hex => {
-  let str = ''
-  for (let i = 0; i < hex.length && hex.substr(i, 2) !== '00'; i += 2)
-    str += String.fromCharCode(parseInt(hex.substr(i, 2), 16))
-  return str
-}
-
-const fetch_token_metadata = (_ => {
-  const metadata_cache = {
-    ETH: {
-      address: '',
-      symbol: 'ETH',
-      name: 'Ether',
-      decimals: 18
-    }
-  }
-  return async address => {
-    if (metadata_cache[address])
-      return metadata_cache[address]
-
-    const contract_string = new window.web3.eth.Contract(ERC20.string, address),
-          contract_bytes32 = new window.web3.eth.Contract(ERC20.bytes32, address)
-
-    const [name, symbol, decimals] = await Promise.all([
-      contract_string.methods.name().call().catch(async _ => {
-        const hex_string = await contract_bytes32.methods.name().call().catch(_ => '')
-        return hextoAscii(hex_string)
-      }),
-      contract_string.methods.symbol().call().catch(async _ => {
-        const hex_string = await contract_bytes32.methods.symbol().call().catch(_ => '')
-        return hextoAscii(hex_string)
-      }),
-      contract_string.methods.decimals().call().catch(_ => {
-        return contract_bytes32.methods.decimals().call().catch(_ => -1)
-      })
-    ])
-    const metadata = {
-      address,
-      symbol,
-      name,
-      decimals: parseInt(decimals)
-    }
-    metadata_cache[address] = metadata
-    return metadata
-  }
-})()
 
 const link_key = transfer => transfer.sender > transfer.receiver ? `${ transfer.sender }_${ transfer.receiver }` : `${ transfer.receiver }_${ transfer.sender }`
 
@@ -98,12 +50,10 @@ const start_web3 = _ => {
   if (window.ethereum) {
     window.web3 = new web3(window.ethereum)
     window.ethereum.enable()
-    return true
   }
   else {
     window.web3 = new web3(POCKET_RPC_URL)
     console.log('No MetaMask detected, using Pocket Network')
-    return true
   }
 }
 
@@ -202,8 +152,7 @@ class App extends PureComponent {
 
     d3.select(window).on('resize', this.resize_and_restart)
 
-    if (!start_web3())
-      return
+    start_web3()
     
     if (this.transaction_hash) {
       await this.load_transaction(this.transaction_hash)
@@ -308,13 +257,7 @@ class App extends PureComponent {
       }
     }
 
-    await Promise.all(transfers.map(async t => {
-      const metadata = await fetch_token_metadata(t.token_address)
-      t.decimals = metadata.decimals
-      t.name = metadata.name
-      t.symbol = metadata.symbol
-      this.tokens_metadata[t.token_address] = metadata
-    }))
+    await Promise.all(transfers.map(t => TokensMetadata.fetch(t.token_address)))
 
     const address_balances = {},
           links = {}
@@ -332,7 +275,7 @@ class App extends PureComponent {
       if (!this.address_to_node[address]) {
         const color = this.main_drawer.node_color(address)
         const node = {
-          name: KNOWN_ADDRESSES[address] || (this.tokens_metadata[address] || {}).symbol || address.substr(0, 7),
+          name: addressLabel(address),
           full_name: address,
           type: 'EOA',
           balances: {},
