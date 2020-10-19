@@ -330,19 +330,26 @@ class App extends PureComponent {
       const [source, target] = l.key.split('_'),
             source_amounts = {},
             target_amounts = {},
-            icons_hash = {}
+            source_icons_hash = {},
+            target_icons_hash = {}
       for (const t of l.transfers) {
         source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
         target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
-        icons_hash[t.token_address] = true
+        if (t.sender === source)
+          source_icons_hash[t.token_address] = true
+        else
+          target_icons_hash[t.token_address] = true
       }
-      const icons = Object.keys(icons_hash)
+      const source_icons = Object.keys(source_icons_hash),
+            target_icons = Object.keys(target_icons_hash)
       l.source_amounts = source_amounts
       l.filtered_source_amounts = source_amounts
       l.target_amounts = target_amounts
       l.filtered_target_amounts = target_amounts
-      l.icons = icons
-      l.filtered_icons = icons
+      l.source_icons = source_icons
+      l.filtered_source_icons = source_icons
+      l.target_icons = target_icons
+      l.filtered_target_icons = target_icons
     }
   }
 
@@ -461,24 +468,30 @@ class App extends PureComponent {
       for (const l of filtered) {
         const source_amounts = {},
               target_amounts = {},
-              icons = {},
+              source_icons = {},
+              target_icons = {},
               source = l.source.identifier || l.source,
               target = l.target.identifier || l.target
         for (const t of l.transfers.filter(tf => (!has_token_filter || this.state.tokens_filter[tf.token_address]) && (!has_address_filter || this.filtered_hashes[tf.transaction_hash]))) {
           source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
           target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
-          icons[t.token_address] = true
+          if (t.sender === source)
+            source_icons[t.token_address] = true
+          else
+            target_icons[t.token_address] = true
         }
         l.filtered_source_amounts = source_amounts
         l.filtered_target_amounts = target_amounts
-        l.filtered_icons = Object.keys(icons)
+        l.filtered_source_icons = Object.keys(source_icons)
+        l.filtered_target_icons = Object.keys(target_icons)
       }
     }
     else
       for (const l of filtered) {
         l.filtered_source_amounts = l.source_amounts
         l.filtered_target_amounts = l.target_amounts
-        l.filtered_icons = l.icons
+        l.filtered_source_icons = l.source_icons
+        l.filtered_target_icons = l.target_icons
       }
     return filtered
   }

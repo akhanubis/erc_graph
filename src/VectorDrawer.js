@@ -14,7 +14,7 @@ const ICON_DIAMETER = 32
 
 class VectorDrawer extends Drawer {
   node_color = n => {
-    if (n.type === 'contract')
+    if (n.address_type === 'contract')
       return '#2099c9'
     return '#6FC6E8'
   }
@@ -44,8 +44,10 @@ class VectorDrawer extends Drawer {
           from = DataUtils.point_at_edge(l.source, l.source.radius, dx, dy, l.source.x < l.target.x, this.drawing_scale),
           to = DataUtils.point_at_edge(l.target, l.target.radius, dx, dy, l.target.x < l.source.x, this.drawing_scale)
       this.draw_line(from, to)
-      if (draw_icons)
-        this.draw_icons(from, to, l.filtered_icons)
+      if (draw_icons) {
+        this.draw_icons(from, to, l.filtered_target_icons)
+        this.draw_icons(to, from, l.filtered_source_icons)
+      }
     }
   }
 
@@ -72,8 +74,8 @@ class VectorDrawer extends Drawer {
   draw_icons = (from, to, icons) => {
     const diameter = ICON_DIAMETER * this.drawing_scale
 
-    const link_length = DataUtils.segment_length(from, to)
-    const initial_offset = 0.5 * diameter + Math.max(0, 0.5 * (link_length - diameter * icons.length))
+    const link_length = 0.5 * DataUtils.segment_length(from, to)
+    const initial_offset = 0.75 * diameter
     const per_icon_offset = icons.length > 1 && icons.length * diameter > link_length ? (link_length - diameter) / (icons.length - 1) : diameter
 
     const angle = Math.atan((to.y - from.y) / (to.x - from.x))
