@@ -51,6 +51,7 @@ html, body, #root, .main-container, .canvas-container {
   top: 0;
   width: 100%;
   height: 100%;
+  cursor: pointer;
 }
 
 .main-canvas {
@@ -270,4 +271,20 @@ circle {
 
 .element-info-container .extra-info-container .strong {
   font-weight: 500;
+}
+
+.element-info-container .extra-info img {
+  width: 20px;
+}
+
+.element-info-container .extra-info .positive {
+  color: green;
+}
+
+.element-info-container .extra-info .negative {
+  color: red;
+}
+
+.element-info-container .extra-info .btn.token-icon {
+  padding: 0 5px;
 }

@@ -263,19 +263,18 @@ class App extends PureComponent {
 
     await Promise.all(transfers.map(t => TokensMetadata.fetch(t.token_address)))
 
-    const address_balances = {},
-          links = {}
+    const links = {},
+          addresses = {}
+          
     for (const t of transfers) {
-      address_balances[t.sender] = address_balances[t.sender] || {}
-      address_balances[t.sender][t.token_address] = (address_balances[t.sender][t.token_address] || new BigNumber(0)).minus(t.amount)
-      address_balances[t.receiver] = address_balances[t.receiver] || {}
-      address_balances[t.receiver][t.token_address] = (address_balances[t.receiver][t.token_address] || new BigNumber(0)).plus(t.amount)
+      addresses[t.sender] = true
+      addresses[t.receiver] = true
       const key = link_key(t)
       links[key] = links[key] || []
       links[key].push(t)
     }
 
-    for (const address in address_balances) {
+    for (const address in addresses) {
       if (!this.address_to_node[address]) {
         const color = this.main_drawer.node_color(address)
         const node = {
@@ -285,7 +284,6 @@ class App extends PureComponent {
           identifiers: [address],
           address_type: 'EOA',
           type: 'address',
-          balances: {},
           radius: 30,
           color,
           outline_color: pSBC(-0.5, color)
@@ -294,9 +292,6 @@ class App extends PureComponent {
         this.address_to_node[address] = node
         this.set_node_color_from_type(address)
       }
-      const n = this.address_to_node[address]
-      for (const token_address in address_balances[address])
-        n.balances[token_address] = (n.balances[token_address] || new BigNumber(0)).plus(address_balances[address][token_address])
     }
 
     for (const key in links) {
@@ -307,6 +302,8 @@ class App extends PureComponent {
           identifiers: [source, target],
           source,
           target,
+          source_address: source,
+          target_address: target,
           key,
           transfers: [],
           width: 1,
@@ -326,6 +323,9 @@ class App extends PureComponent {
   }
 
   after_load = _ => {
+    for (const n of this.nodes)
+      n.balances = {}
+
     for (const l of this.links) {
       const [source, target] = l.key.split('_'),
             source_amounts = {},
@@ -350,6 +350,15 @@ class App extends PureComponent {
       l.filtered_source_icons = source_icons
       l.target_icons = target_icons
       l.filtered_target_icons = target_icons
+
+      const source_balances = this.address_to_node[source].balances,
+            target_balances = this.address_to_node[target].balances
+      this.address_to_node[source].balances = source_balances
+      this.address_to_node[target].balances = target_balances
+      for (const token_address in source_amounts)
+        source_balances[token_address] = (source_balances[token_address] || new BigNumber(0)).plus(source_amounts[token_address])
+      for (const token_address in target_amounts)
+        target_balances[token_address] = (target_balances[token_address] || new BigNumber(0)).plus(target_amounts[token_address])
     }
   }
 
@@ -437,7 +446,7 @@ class App extends PureComponent {
 
   filter_links_by_from_to = links => {
     if (Object.keys(this.state.from_to_tx_filter).length)
-      filterInPlace(links, l => this.state.from_to_tx_filter[l.source.identifier || l.source] || this.state.from_to_tx_filter[l.target.identifier || l.target] || this.state.from_to_tx_filter[l.source.name] || this.state.from_to_tx_filter[l.target.name])
+      filterInPlace(links, l => this.state.from_to_tx_filter[l.source_address] || this.state.from_to_tx_filter[l.target_address] || this.state.from_to_tx_filter[l.source.name] || this.state.from_to_tx_filter[l.target.name])
     return links
   }
 
@@ -462,45 +471,14 @@ class App extends PureComponent {
   filter_links = links => {
     const copy = [...links]
     const filtered = this.filter_links_by_address(this.filter_links_by_token(this.filter_links_by_from_to(copy)))
-    const has_token_filter = Object.keys(this.state.tokens_filter).length,
-          has_address_filter = Object.keys(this.state.addresses_filter).length
-    if (has_token_filter || has_address_filter) {
-      for (const l of filtered) {
-        const source_amounts = {},
-              target_amounts = {},
-              source_icons = {},
-              target_icons = {},
-              source = l.source.identifier || l.source,
-              target = l.target.identifier || l.target
-        for (const t of l.transfers.filter(tf => (!has_token_filter || this.state.tokens_filter[tf.token_address]) && (!has_address_filter || this.filtered_hashes[tf.transaction_hash]))) {
-          source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
-          target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
-          if (t.sender === source)
-            source_icons[t.token_address] = true
-          else
-            target_icons[t.token_address] = true
-        }
-        l.filtered_source_amounts = source_amounts
-        l.filtered_target_amounts = target_amounts
-        l.filtered_source_icons = Object.keys(source_icons)
-        l.filtered_target_icons = Object.keys(target_icons)
-      }
-    }
-    else
-      for (const l of filtered) {
-        l.filtered_source_amounts = l.source_amounts
-        l.filtered_target_amounts = l.target_amounts
-        l.filtered_source_icons = l.source_icons
-        l.filtered_target_icons = l.target_icons
-      }
     return filtered
   }
 
   filter_nodes = (nodes, remaining_links) => {
     const remaining_addresses = {}
     for (const l of remaining_links) {
-      remaining_addresses[l.source.identifier || l.source] = true
-      remaining_addresses[l.target.identifier || l.target] = true
+      remaining_addresses[l.source_address] = true
+      remaining_addresses[l.target_address] = true
     }
     return nodes.filter(n => remaining_addresses[n.identifier])
   }
@@ -517,6 +495,53 @@ class App extends PureComponent {
     if (this.filters_prev_state === new_state)
       return
     this.filters_prev_state = new_state
+
+    const has_token_filter = Object.keys(this.state.tokens_filter).length,
+          has_address_filter = Object.keys(this.state.addresses_filter).length
+    if (has_token_filter || has_address_filter) {
+      for (const n of this.filtered_nodes)
+        n.filtered_balances = {}
+
+      for (const l of this.filtered_links) {
+        const source_amounts = {},
+              target_amounts = {},
+              source_icons = {},
+              target_icons = {},
+              source = l.source_address,
+              target = l.target_address
+        for (const t of l.transfers.filter(tf => (!has_token_filter || this.state.tokens_filter[tf.token_address]) && (!has_address_filter || this.filtered_hashes[tf.transaction_hash]))) {
+          source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
+          target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
+          if (t.sender === source)
+            source_icons[t.token_address] = true
+          else
+            target_icons[t.token_address] = true
+        }
+        l.filtered_source_amounts = source_amounts
+        l.filtered_target_amounts = target_amounts
+        l.filtered_source_icons = Object.keys(source_icons)
+        l.filtered_target_icons = Object.keys(target_icons)
+
+        const source_balances = this.address_to_node[source].filtered_balances,
+              target_balances = this.address_to_node[target].filtered_balances
+        this.address_to_node[source].filtered_balances = source_balances
+        this.address_to_node[target].filtered_balances = target_balances
+        for (const token_address in source_amounts)
+          source_balances[token_address] = (source_balances[token_address] || new BigNumber(0)).plus(source_amounts[token_address])
+        for (const token_address in target_amounts)
+          target_balances[token_address] = (target_balances[token_address] || new BigNumber(0)).plus(target_amounts[token_address])
+      }
+    }
+    else {
+      for (const n of this.filtered_nodes)
+        n.filtered_balances = n.balances
+      for (const l of this.filtered_links) {
+        l.filtered_source_amounts = l.source_amounts
+        l.filtered_target_amounts = l.target_amounts
+        l.filtered_source_icons = l.source_icons
+        l.filtered_target_icons = l.target_icons
+      }
+    }
 
     this.filtered_links.sort((a, b) => a.width - b.width) /* from thinnest to widest so widest get drawn last */
     this.force.nodes(this.filtered_nodes)

@@ -25,6 +25,18 @@ class TokensMetadata {
     return this._metadata[address]
   }
 
+  static symbol(address) {
+    return this._metadata[address].symbol
+  }
+  
+  static decimals(address) {
+    return this._metadata[address].decimals
+  }
+
+  static fromDecimals(value, address) {
+    return value.times(Math.pow(10, -1 * this.decimals(address)))
+  }
+
   static async fetch(address) {
     if (this._metadata[address])
       return this._metadata[address]

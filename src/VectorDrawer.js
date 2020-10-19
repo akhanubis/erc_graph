@@ -1,15 +1,7 @@
-import TOKEN_ICONS from './token_icons'
 import Drawer from './Drawer'
 import DataUtils from './data_utils'
-import ThinkingIcon from './assets/thinking.png'
+import TOKEN_IMAGES from './token_images'
 
-const TOKEN_IMAGES = {}
-for (const address in TOKEN_ICONS) {
-  TOKEN_IMAGES[address] = new Image()
-  TOKEN_IMAGES[address].src = TOKEN_ICONS[address]
-}
-TOKEN_IMAGES.thinking = new Image()
-TOKEN_IMAGES.thinking.src = ThinkingIcon
 const ICON_DIAMETER = 32
 
 class VectorDrawer extends Drawer {

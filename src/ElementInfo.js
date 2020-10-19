@@ -1,5 +1,9 @@
 import React, { PureComponent } from 'react'
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap'
+import BalanceInfo from './BalanceInfo'
+import TransfersInfo from './TransfersInfo'
+// import TransactionsInfo from './TransactionsInfo'
+import Etherscan from './etherscan'
 
 const WIDTH = 350
 
@@ -18,8 +22,6 @@ class ElementInfo extends PureComponent {
     </Tooltip>
   )
 
-  open_explorer = address => window.open(`https://etherscan.io/address/${ address }`, '_blank')
-
   explorer_tooltip = (
     <Tooltip id="explorer_tooltip">
       Open in explorer
@@ -34,7 +36,7 @@ class ElementInfo extends PureComponent {
         </Button>
       </OverlayTrigger>
       <OverlayTrigger placement="bottom" overlay={this.explorer_tooltip}>
-        <Button variant="link" onClick={_ => this.open_explorer(address)}>
+        <Button variant="link" onClick={_ => Etherscan.link('address', address)}>
           <i className='fas fa-external-link-alt'/>
         </Button>
       </OverlayTrigger>
@@ -80,17 +82,22 @@ class ElementInfo extends PureComponent {
     return (
       <div className="element-info-container" style={{ top: `${ coords.y }px`, left: `${ coords.x }px` }}>
         {(this.props.element.identifiers || []).map(address => (
-          <div className='element-identifier' key={address}>
-            <div className="legend">
-              <div className="element-label">
-                {address}
+          <div key={address}>
+            <div className='element-identifier'>
+              <div className="legend">
+                <div className="element-label">
+                  {address}
+                </div>
+              </div>
+              <div className="after-legend">
+                {this.links(address)}
               </div>
             </div>
-            <div className="after-legend">
-              {this.links(address)}
-            </div>
+            <BalanceInfo node={this.props.element}/>
+            <TransfersInfo link={this.props.element} address={address}/>
           </div>
         ))}
+        {/*<TransactionsInfo link={this.props.element} address={address}/> */}
         <textarea className="address-clipboard" readOnly={true} ref={t => this.clipboard_input = t}/>
       </div>
     )
