@@ -3,8 +3,8 @@ TODO:
 element info con todos los balances
 reverse ens
 UI de filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link
-UI de filtrar por address, checkbox para que muestre o no otros transfers dentro de mismo link
-al filtrar por address, filtrar transfers que no eran de txs hashes filtrados 
+UI de filtrar por from y to de la transfer, checkbox para que muestre o no otros transfers dentro de mismo link
+UI de filtrar por from y to de la tx
 remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
 mempool version, va metiendo tx por tx y cuando se mina un bloque saca todas las que fueron minadas
@@ -25,9 +25,10 @@ import Gas from './Gas'
 import LoadingPanel from './LoadingPanel'
 import Drawer from './VectorDrawer'
 import DataUtils from './data_utils'
-import TokensMetadata from "./TokensMetadata"
+import TokensMetadata from './TokensMetadata'
+import ElementInfo from './ElementInfo'
 import { filterInPlace, promisesInChunk } from './utils'
-import addressLabel from './address_label'
+import { addressName, addressLabel } from './address_label'
 import pSBC from './psbc'
 import 'babel-polyfill'
 
@@ -42,7 +43,7 @@ const
   SEMANTIC_ZOOM_TRESHOLD = 1.5,
   DEFAULT_HOVER_COLOR = '#000000',
   FPS_UPDATE_WINDOW = 30,
-  DEFAULT_HISTORY_SIZE = 10,
+  DEFAULT_HISTORY_SIZE = 2,
   METAMASK_ENABLED = window.ethereum,
   POCKET_MAX_CONCURRENCY = 50,
   METAMASK_MAX_CONCURRENCY = 300
@@ -120,7 +121,7 @@ class App extends PureComponent {
 
     this.force = d3.forceSimulation()
       .force("charge", d3.forceManyBody().distanceMax(50000).strength(n => -20 - 30 * 2 * (n.radius - 5)))
-      .force("link", d3.forceLink(this.filtered_links).distance(150).id(d => d.full_name))
+      .force("link", d3.forceLink(this.filtered_links).distance(150).id(d => d.identifier))
       .force("x", d3.forceX())
       .force("y", d3.forceY())
       .force("center", d3.forceCenter(0, 0))
@@ -159,6 +160,7 @@ class App extends PureComponent {
     
     if (this.transaction_hash) {
       await this.load_transaction(this.transaction_hash)
+      this.setState({ loading: false })
       this.after_load()
     }
     else {
@@ -205,8 +207,8 @@ class App extends PureComponent {
           unique_new_txs = {}
     for (const tx of new_txs)
       unique_new_txs[tx] = true
-    if (logs.length)
-      this.setState({ loading: true })
+    // if (logs.length)
+    //   this.setState({ loading: true })
     await promisesInChunk(Object.keys(unique_new_txs), METAMASK_ENABLED ? METAMASK_MAX_CONCURRENCY : POCKET_MAX_CONCURRENCY, this.load_transaction)
     this.setState({ loading: false })
     this.after_load()
@@ -277,9 +279,12 @@ class App extends PureComponent {
       if (!this.address_to_node[address]) {
         const color = this.main_drawer.node_color(address)
         const node = {
-          name: addressLabel(address),
-          full_name: address,
-          type: 'EOA',
+          label: addressLabel(address),
+          name: addressName(address),
+          identifier: address,
+          identifiers: [address],
+          address_type: 'EOA',
+          type: 'address',
           balances: {},
           radius: 30,
           color,
@@ -298,6 +303,8 @@ class App extends PureComponent {
       const [source, target] = key.split('_')
       if (!this.link_key_to_link[key]) {
         const link = {
+          name: `${ this.address_to_node[source].name } - ${ this.address_to_node[target].name }`,
+          identifiers: [source, target],
           source,
           target,
           key,
@@ -343,7 +350,7 @@ class App extends PureComponent {
     const code = await window.web3.eth.getCode(address)
     if (code !== '0x') {
       const n = this.address_to_node[address]
-      n.type = 'contract'
+      n.address_type = 'contract'
       n.color = this.main_drawer.node_color(n)
       n.outline_color = pSBC(-0.5, n.color)
     }
@@ -423,7 +430,7 @@ class App extends PureComponent {
 
   filter_links_by_from_to = links => {
     if (Object.keys(this.state.from_to_tx_filter).length)
-      filterInPlace(links, l => this.state.from_to_tx_filter[l.source.full_name || l.source] || this.state.from_to_tx_filter[l.target.full_name || l.target] || this.state.from_to_tx_filter[l.source.name] || this.state.from_to_tx_filter[l.target.name])
+      filterInPlace(links, l => this.state.from_to_tx_filter[l.source.identifier || l.source] || this.state.from_to_tx_filter[l.target.identifier || l.target] || this.state.from_to_tx_filter[l.source.name] || this.state.from_to_tx_filter[l.target.name])
     return links
   }
 
@@ -455,8 +462,8 @@ class App extends PureComponent {
         const source_amounts = {},
               target_amounts = {},
               icons = {},
-              source = l.source.full_name || l.source,
-              target = l.target.full_name || l.target
+              source = l.source.identifier || l.source,
+              target = l.target.identifier || l.target
         for (const t of l.transfers.filter(tf => (!has_token_filter || this.state.tokens_filter[tf.token_address]) && (!has_address_filter || this.filtered_hashes[tf.transaction_hash]))) {
           source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
           target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
@@ -479,13 +486,13 @@ class App extends PureComponent {
   filter_nodes = (nodes, remaining_links) => {
     const remaining_addresses = {}
     for (const l of remaining_links) {
-      remaining_addresses[l.source.full_name || l.source] = true
-      remaining_addresses[l.target.full_name || l.target] = true
+      remaining_addresses[l.source.identifier || l.source] = true
+      remaining_addresses[l.target.identifier || l.target] = true
     }
-    return nodes.filter(n => remaining_addresses[n.full_name])
+    return nodes.filter(n => remaining_addresses[n.identifier])
   }
 
-  unique_filters_state_id = _ => `${ this.filtered_nodes.map(n => n.full_name).sort().join('__') }____${ this.filtered_links.map(l => l.hash).sort().join('__') }`
+  unique_filters_state_id = _ => `${ this.filtered_nodes.map(n => n.identifier).sort().join('__') }____${ this.filtered_links.map(l => l.hash).sort().join('__') }`
 
   restart_simulation = _ => {
     const filtered_links = this.filter_links(this.links),
@@ -618,13 +625,15 @@ class App extends PureComponent {
 
   render() {
     const current_alpha = this.force ? this.force.alpha() : 1
-    const { fps, loading, force_running } = this.state 
+    const { fps, loading, force_running, viewport_size, clicked_element_ts, hovered_element, clicked_element,  } = this.state 
     return ([
       <div className='main-container' key="1">
         <div className="canvas-container">
           <canvas className="main-canvas" ref={c => this.canvas = c}/>
           <Fps fps={fps} running={force_running} alpha={current_alpha}/>
           <Gas />
+          <ElementInfo transformation_matrix={this.zoom_transform} viewport_size={viewport_size} ts={clicked_element_ts /* force update */} element={clicked_element} default_color={DEFAULT_HOVER_COLOR} hidden={loading} />
+          <ElementInfo transformation_matrix={this.zoom_transform} viewport_size={viewport_size} element={hovered_element} default_color={DEFAULT_HOVER_COLOR} hidden={loading || clicked_element === hovered_element} />
         </div>
       </div>,
       <LoadingPanel key="2" loading={loading}/>

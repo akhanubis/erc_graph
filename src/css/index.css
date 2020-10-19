@@ -182,3 +182,92 @@ circle {
   object-fit: contain;
   max-height: 50px;
 }
+
+.element-identifier {
+  height: 26px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.element-identifier .btn-link {
+  padding: 0 5px;
+}
+
+.legend {
+  display: flex;
+  position: relative;
+  line-height: 26px;
+}
+
+.legend .element-type {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  width: 20px;
+  color: white;
+  text-align: center;
+  font-size: 12px;
+  line-height: 20px;
+  margin-top: 2px;
+}
+
+.legend img {
+  height: 20px;
+}
+
+.legend img.bch {
+  margin-top: 3px;
+}
+
+.legend img.btc {
+  margin-top: 2px;
+}
+
+.legend img.eth {
+  margin-top: 2px;
+}
+
+.legend svg {
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+.legend .element-label {
+  display: inline;
+  margin-left: 5px;
+  color: rgb(33, 37, 41);
+}
+
+.after-legend {
+  font-size: 14px;
+  line-height: 26px;
+}
+
+.after-legend button:last-child {
+  padding-right: 0;
+}
+
+.element-info-container {
+  z-index: 9;
+  padding: 10px;
+  width: 350px;
+  position: fixed;
+  background-color: #F7F7F7;
+  border: none;
+  border-radius: .35rem;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.33);
+  font-size: 12px;
+}
+
+.element-info-container:empty {
+  display:none /* hide border */
+}
+
+.element-info-container .extra-info-container {
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.element-info-container .extra-info-container .strong {
+  font-weight: 500;
+}

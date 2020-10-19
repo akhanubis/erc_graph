@@ -28,7 +28,7 @@ class VectorDrawer extends Drawer {
     this.ctx.fill()
     this.ctx.stroke()
     if (draw_name && this.drawing_scale > 0.5)
-      this.draw_text(n, n.name)
+      this.draw_text(n, n.label)
   }
 
   draw_link = (l, hovered = false, clicked = false, draw_icons = true) => {
