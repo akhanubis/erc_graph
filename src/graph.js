@@ -113,6 +113,8 @@ class App extends PureComponent {
 
     for (const address of url_params.get('filterTokens') || [])
       this.state.tokens_filter[address] = true
+
+    this.url_params = url_params
   }
 
   async componentDidMount() {
@@ -168,8 +170,7 @@ class App extends PureComponent {
       this.after_load()
     }
     else {
-      const latest_bn = (await window.web3.eth.getBlock('latest')).number
-      this.listen_for_new_logs(latest_bn)
+      this.listen_for_new_logs(this.url_params.get('fromBlock'), this.url_params.get('toBlock'), this.url_params.get('logAddress'))
       this.process_pending_logs()
     }
     this.resize()
@@ -181,38 +182,34 @@ class App extends PureComponent {
     loadSubgraphs(address => this.update_node_metadata(address))
   }
 
-  listen_for_new_logs = async initial_bn => {
+  listen_for_new_logs = async (from, to, address) => {
+    to = parseInt(to) || 'latest'
+    const latest_bn = to === 'latest' ? (await window.web3.eth.getBlock(to)).number : to
+    from = from || latest_bn - DEFAULT_HISTORY_SIZE + 1
+
+    const logs_params = {
+      toBlock: to,
+      topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
+    }
+    if (address)
+      logs_params.address = address
+
     if (METAMASK_ENABLED) {
       window.web3.eth.subscribe('logs', {
-        fromBlock: initial_bn - DEFAULT_HISTORY_SIZE + 1,
-        topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
+        fromBlock: from,
+        ...logs_params
       }).on('data', log => this.pending_logs.push(log))
-      // const logs = await window.web3.eth.getPastLogs({
-      //   fromBlock: 11090084,
-      //   toBlock: 11090084,
-      //   topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
-      // })
-      // for (const l of logs)
-      //   this.pending_logs.push(l)
-      // const logs2 = await window.web3.eth.getPastLogs({
-      //   fromBlock: 11075170,
-      //   toBlock: 11076170,
-      //   address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-      //   topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
-      // })
-      // for (const l of logs2)
-      //   this.pending_logs.push(l)
     }
     else {
       setInterval((_ => {
-        let last_block = initial_bn - 1
+        let last_block = from - 1
         return async _ => {
-          const latest_block = (await window.web3.eth.getBlock('latest')).number
+          const latest_block = (await window.web3.eth.getBlock(to)).number
           if (latest_block <= last_block)
             return
           const logs = await window.web3.eth.getPastLogs({
             fromBlock: last_block + 1,
-            topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
+            ...logs_params
           })
           for (const l of logs)
             this.pending_logs.push(l)
