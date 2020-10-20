@@ -46,7 +46,7 @@ const
   DEFAULT_HISTORY_SIZE = 2,
   METAMASK_ENABLED = window.ethereum,
   POCKET_MAX_CONCURRENCY = 50,
-  METAMASK_MAX_CONCURRENCY = 300
+  METAMASK_MAX_CONCURRENCY = 500
 
 const link_key = transfer => transfer.sender > transfer.receiver ? `${ transfer.sender }_${ transfer.receiver }` : `${ transfer.receiver }_${ transfer.sender }`
 
