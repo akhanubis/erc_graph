@@ -7,9 +7,6 @@ const TransactionsInfo = ({ element }) => {
     by_tx[t.transaction_hash] = by_tx[t.transaction_hash] || []
     by_tx[t.transaction_hash].push(t)
   }
-  console.log(element.transfers)
-  console.log(element.filtered_transfers)
-  console.log(by_tx)
   return (
     <div className="extra-info">
       {Object.entries(by_tx).map(([transaction_hash, transfers]) => <TransactionInfo key={transaction_hash} hash={transaction_hash} transfers={transfers}/>)}

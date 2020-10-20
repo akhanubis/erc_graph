@@ -1,20 +1,11 @@
 /*
 TODO:
-reverse ens
-async function Reverse(address) {        
-    var lookup=address.toLowerCase().substr(2) + '.addr.reverse'
-    var ResolverContract=await web3.eth.ens.resolver(lookup);
-    var nh=namehash.hash(lookup);
-    var name=await ResolverContract.methods.name(nh).call()
-    return name;
-}    
-
-
+usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
+sidebar
+remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 UI de filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link, el checkbox define si se usa filtered o no para transfers
 UI de filtrar por from y to de la transfer
 UI de filtrar por from y to de la tx
-remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
-usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
 mempool version, va metiendo tx por tx y cuando se mina un bloque saca todas las que fueron minadas
 
 nice to have:
@@ -37,7 +28,7 @@ import DataUtils from './data_utils'
 import TokensMetadata from './TokensMetadata'
 import ElementInfo from './ElementInfo'
 import { filterInPlace, promisesInChunk } from './utils'
-import { addressName, addressLabel } from './address_label'
+import { addressName, addressLabel, reverseENS } from './address_label'
 import pSBC from './psbc'
 import 'babel-polyfill'
 
@@ -78,6 +69,7 @@ class App extends PureComponent {
     const url_params = new URLSearchParams(window.location.search)
 
     this.transaction_hash = url_params.get('hash')
+    this.resolve_ens = url_params.get('ens')
     this.initialized = false
     this.pending_logs = []
     this.tokens_metadata = {}
@@ -324,7 +316,7 @@ class App extends PureComponent {
         }
         this.nodes.push(node)
         this.address_to_node[address] = node
-        this.set_node_color_from_type(address)
+        this.fetch_address_metadata(address)
       }
     }
 
@@ -418,13 +410,21 @@ class App extends PureComponent {
     }
   }
 
-  set_node_color_from_type = async address => {
+  fetch_address_metadata = async address => {
     const code = await window.web3.eth.getCode(address)
     if (code !== '0x') {
       const n = this.address_to_node[address]
       n.address_type = 'contract'
       n.color = this.main_drawer.node_color(n)
       n.outline_color = pSBC(-0.5, n.color)
+    }
+
+    if (this.resolve_ens) {
+      const name = await reverseENS(address)
+      if (name) {
+        n.label = name
+        n.name = name
+      }
     }
   }
 
