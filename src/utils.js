@@ -19,7 +19,7 @@ export const retryablePromise = (promise_fn, max_retries = 3, tries = 0) => {
     console.log(e)
     if (tries <= max_retries) {
       console.log('Retryable promise failed, retrying', tries)
-      return exports.retryable_promise(promise_fn, max_retries, tries)
+      return retryablePromise(promise_fn, max_retries, tries)
     }
     else {
       console.log('Retryable promise failed, out of retries')
