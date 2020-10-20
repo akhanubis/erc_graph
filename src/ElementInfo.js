@@ -5,7 +5,7 @@ import TransfersInfo from './TransfersInfo'
 import TransactionsInfo from './TransactionsInfo'
 import Etherscan from './etherscan'
 
-const WIDTH = 400
+const WIDTH = 410
 
 class ElementInfo extends PureComponent {
   identifier = _ => this.props.element.identifier

@@ -250,7 +250,7 @@ circle {
 .element-info-container {
   z-index: 9;
   padding: 10px;
-  width: 400px;
+  width: 410px;
   max-height: 400px;
   overflow-y: auto;
   position: fixed;
