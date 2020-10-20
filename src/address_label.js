@@ -1,10 +1,12 @@
 import { ethers } from 'ethers'
-import { KNOWN_ADDRESSES } from './known_addresses'
+import { KNOWN_ADDRESSES, KNOWN_ADDRESSES_COLORS } from './known_addresses'
 import TokensMetadata from './TokensMetadata'
 
 export const addressLabel = address => KNOWN_ADDRESSES[address] || (TokensMetadata.get(address) || {}).symbol || address.substr(0, 7)
 
 export const addressName = address => KNOWN_ADDRESSES[address] || (TokensMetadata.get(address) || {}).symbol || address
+
+export const addressColor = address => KNOWN_ADDRESSES_COLORS[address]
 
 /* closure */
 export const reverseENS = (_ => {

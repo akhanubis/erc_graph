@@ -6,6 +6,10 @@ Array.from(document.querySelectorAll('#table-subcatid-0 tbody, #table-subcatid-1
 */
 
 export const BY_PROTOCOL = {
+  zero: {
+    '0x0000000000000000000000000000000000000000': 'Mint/Burn address',
+    '0x000000000000000000000000000000000000dead': 'Dead address',
+  },
   one_inch: {
     '0x11111254369792b2ca5d084ab5eea397ca8fa48b': '1inch.exchange',
     '0x0000000000004946c0e9f43f4dee607b0ef1fa1c': '1inch.exchange: CHI Token',
@@ -2188,8 +2192,6 @@ export const BY_PROTOCOL = {
 }
 
 export const KNOWN_ADDRESSES = {
-  '0x0000000000000000000000000000000000000000': 'Mint/Burn address',
-  '0x000000000000000000000000000000000000dead': 'Dead address',
   '0x176b98ab38d1ae8ff3f30bf07f9b93e26f559c17': 'ACO: Factory Contract',
   '0x5bca0f6cd5f9a74895d66005acef969342f301a0': 'CollateralSwap: Alpha',
   '0xfd14431285a570adc839c73cc973542e0ffee56f': 'CollateralSwap: Core Alpha v0.2',
@@ -2303,6 +2305,22 @@ export const KNOWN_ADDRESSES = {
   '0xd97d09f3bd931a14382ac60f156c1285a56bb51b': 'WeDEX: Beta 2',
 }
 
+export const COLORS_BY_PROTOCOL = {
+  zero: '#212121',
+  one_inch: '#673AB7',
+  binance: '#FFC107',
+  sushiswap: '#795548',
+  uniswap: '#E91E63',
+  curve: '#1976D2',
+  uma: '#F44336',
+  compound: '#4CAF50',
+  balancer: '#607D8B'
+}
+
+export const KNOWN_ADDRESSES_COLORS = {}
+
 for (const protocol in BY_PROTOCOL)
-  for (const a in BY_PROTOCOL[protocol])
+  for (const a in BY_PROTOCOL[protocol]) {
     KNOWN_ADDRESSES[a] = BY_PROTOCOL[protocol][a]
+    KNOWN_ADDRESSES_COLORS[a] = COLORS_BY_PROTOCOL[protocol]
+  }

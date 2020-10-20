@@ -28,7 +28,7 @@ import DataUtils from './data_utils'
 import TokensMetadata from './TokensMetadata'
 import ElementInfo from './ElementInfo'
 import { filterInPlace, promisesInChunk } from './utils'
-import { addressName, addressLabel, reverseENS } from './address_label'
+import { addressName, addressLabel, addressColor, reverseENS } from './address_label'
 import { BY_PROTOCOL } from './known_addresses'
 import pSBC from './psbc'
 import 'babel-polyfill'
@@ -300,7 +300,7 @@ class App extends PureComponent {
 
     for (const address in addresses) {
       if (!this.address_to_node[address]) {
-        const color = this.main_drawer.node_color(address)
+        const color = addressColor(address) || this.main_drawer.DEFAULT_COLOR
         const node = {
           label: addressLabel(address),
           name: addressName(address),
@@ -413,7 +413,7 @@ class App extends PureComponent {
     if (code !== '0x') {
       const n = this.address_to_node[address]
       n.address_type = 'contract'
-      n.color = this.main_drawer.node_color(n)
+      n.color = n.color === this.main_drawer.DEFAULT_COLOR ? this.main_drawer.node_color(n) : n.color
       n.outline_color = pSBC(-0.5, n.color)
     }
 

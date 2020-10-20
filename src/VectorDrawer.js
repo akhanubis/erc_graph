@@ -5,10 +5,12 @@ import TOKEN_IMAGES from './token_images'
 const ICON_DIAMETER = 32
 
 class VectorDrawer extends Drawer {
+  DEFAULT_COLOR = '#6FC6E8'
+  
   node_color = n => {
     if (n.address_type === 'contract')
       return '#2099c9'
-    return '#6FC6E8'
+    return this.DEFAULT_COLOR
   }
 
   draw_node = (n, hovered = false, clicked = false, draw_name = true) => {
