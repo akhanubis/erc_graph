@@ -18,4 +18,4 @@ const TokenTransfer = ({ transfer }) => {
   )
 }
 
-export default TokenTransfer
+export default React.memo(TokenTransfer)

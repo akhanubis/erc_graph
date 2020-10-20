@@ -17,4 +17,4 @@ const TokenIcon = ({ address }) => (
   </OverlayTrigger>
 )
 
-export default TokenIcon
+export default React.memo(TokenIcon)

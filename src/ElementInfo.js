@@ -99,4 +99,4 @@ class ElementInfo extends PureComponent {
   }
 }
 
-export default ElementInfo
+export default React.memo(ElementInfo)

@@ -3,9 +3,9 @@ import { Button, OverlayTrigger } from 'react-bootstrap'
 import TokenTransfer from './TokenTransfer'
 import Etherscan from './etherscan'
 
-const TransactionInfo = ({ hash, transfers }) => {
+const TransactionInfo = ({ style, hash, transfers }) => {
   return (
-    <div>
+    <div style={style}>
       <div className='element-identifier'>
         <div className="legend">
           <div className="element-label">
@@ -27,4 +27,4 @@ const TransactionInfo = ({ hash, transfers }) => {
   )
 }
 
-export default TransactionInfo
+export default React.memo(TransactionInfo)
