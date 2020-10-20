@@ -2,10 +2,10 @@ import React, { PureComponent } from 'react'
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import BalanceInfo from './BalanceInfo'
 import TransfersInfo from './TransfersInfo'
-// import TransactionsInfo from './TransactionsInfo'
+import TransactionsInfo from './TransactionsInfo'
 import Etherscan from './etherscan'
 
-const WIDTH = 350
+const WIDTH = 400
 
 class ElementInfo extends PureComponent {
   identifier = _ => this.props.element.identifier
@@ -21,12 +21,6 @@ class ElementInfo extends PureComponent {
       Copy to clipboard
     </Tooltip>
   )
-
-  explorer_tooltip = (
-    <Tooltip id="explorer_tooltip">
-      Open in explorer
-    </Tooltip>
-  )
   
   links = address => (
     <span>
@@ -35,7 +29,7 @@ class ElementInfo extends PureComponent {
           <i className='fas fa-copy'/>
         </Button>
       </OverlayTrigger>
-      <OverlayTrigger placement="bottom" overlay={this.explorer_tooltip}>
+      <OverlayTrigger placement="bottom" overlay={Etherscan.explorerTooltip()}>
         <Button variant="link" onClick={_ => Etherscan.link('address', address)}>
           <i className='fas fa-external-link-alt'/>
         </Button>
@@ -45,8 +39,8 @@ class ElementInfo extends PureComponent {
 
   projected_height = _ => {
     let projected = 68
-    if (this.props.element.hash)
-      projected += 22
+    if (this.props.element.type === 'link')
+      projected += 104
     return projected
   }
 
@@ -97,7 +91,8 @@ class ElementInfo extends PureComponent {
             <TransfersInfo link={this.props.element} address={address}/>
           </div>
         ))}
-        {/*<TransactionsInfo link={this.props.element} address={address}/> */}
+        <hr/>
+        <TransactionsInfo element={this.props.element}/>
         <textarea className="address-clipboard" readOnly={true} ref={t => this.clipboard_input = t}/>
       </div>
     )

@@ -235,7 +235,6 @@ circle {
 
 .legend .element-label {
   display: inline;
-  margin-left: 5px;
   color: rgb(33, 37, 41);
 }
 
@@ -251,7 +250,9 @@ circle {
 .element-info-container {
   z-index: 9;
   padding: 10px;
-  width: 350px;
+  width: 400px;
+  max-height: 400px;
+  overflow-y: auto;
   position: fixed;
   background-color: #F7F7F7;
   border: none;
@@ -287,4 +288,13 @@ circle {
 
 .element-info-container .extra-info .btn.token-icon {
   padding: 0 5px;
+}
+
+.element-info-container .extra-info .token-transfer .sender,
+.element-info-container .extra-info .token-transfer .receiver {
+  padding: 0 5px;
+}
+
+.element-info-container .extra-info .token-transfer .token-balance {
+  display: inline-block;
 }
