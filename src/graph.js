@@ -29,6 +29,7 @@ import TokensMetadata from './TokensMetadata'
 import ElementInfo from './ElementInfo'
 import { filterInPlace, promisesInChunk } from './utils'
 import { addressName, addressLabel, reverseENS } from './address_label'
+import { BY_PROTOCOL } from './known_addresses'
 import pSBC from './psbc'
 import 'babel-polyfill'
 
@@ -96,25 +97,23 @@ class App extends PureComponent {
 
     this.state = {
       loading: true,
-      addresses_filter: {
-        //'0x0ffeb87106910eefc69c1902f411b431ffc424ff': true
-        //'0xe33c8e3a0d14a81f0dd7e174830089e82f65fc85': true
-        //'0x7a250d5630b4cf539739df2c5dacb4c659f2488d': true
-        //'0x11111254369792b2ca5d084ab5eea397ca8fa48b': true
-      },
       from_to_tx_filter: {
-        //'0x0ffeb87106910eefc69c1902f411b431ffc424ff': true
-        //'0xe33c8e3a0d14a81f0dd7e174830089e82f65fc85': true
-        //'0x7a250d5630b4cf539739df2c5dacb4c659f2488d': true
-        //'0x11111254369792b2ca5d084ab5eea397ca8fa48b': true
+        ...BY_PROTOCOL[url_params.get('filterFromToTxProtocol')]
       },
-      tokens_filter: {
-        '0xdac17f958d2ee523a2206206994597c13d831ec7': true,
-        '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': true,
-        //'0x39aa39c021dfbae8fac545936693ac917d5e7563': true
-        //'0xcaaa93712bdac37f736c323c93d4d5fdefcc31cc': true
-      }
+      from_to_transfer_filter: {
+        ...BY_PROTOCOL[url_params.get('filterFromToTransferProtocol')]
+      },
+      tokens_filter: {}
     }
+
+    for (const address of url_params.get('filterFromToTx') || [])
+      this.state.from_to_tx_filter[address] = true
+
+    for (const address of url_params.get('filterFromToTransfer') || [])
+      this.state.from_to_transfer_filter[address] = true
+
+    for (const address of url_params.get('filterTokens') || [])
+      this.state.tokens_filter[address] = true
   }
 
   async componentDidMount() {
@@ -188,9 +187,8 @@ class App extends PureComponent {
         topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
       }).on('data', log => this.pending_logs.push(log))
       // const logs = await window.web3.eth.getPastLogs({
-      //   fromBlock: 11075170,
-      //   toBlock: 11076170,
-      //   address: '0x39aa39c021dfbae8fac545936693ac917d5e7563',
+      //   fromBlock: 11090084,
+      //   toBlock: 11090084,
       //   topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
       // })
       // for (const l of logs)
@@ -500,18 +498,18 @@ class App extends PureComponent {
     this.force.force('center', d3.forceCenter(0.5 * this.canvas.clientWidth, 0.5 * this.canvas.clientHeight))
   }
 
-  filter_links_by_from_to = links => {
-    if (Object.keys(this.state.from_to_tx_filter).length)
-      filterInPlace(links, l => this.state.from_to_tx_filter[l.source_address] || this.state.from_to_tx_filter[l.target_address] || this.state.from_to_tx_filter[l.source.name] || this.state.from_to_tx_filter[l.target.name])
+  filter_links_by_from_to_transfer = links => {
+    if (Object.keys(this.state.from_to_transfer_filter).length)
+      filterInPlace(links, l => this.state.from_to_transfer_filter[l.source_address] || this.state.from_to_transfer_filter[l.target_address] || this.state.from_to_transfer_filter[l.source.name] || this.state.from_to_transfer_filter[l.target.name])
     return links
   }
 
   filter_links_by_address = links => {
-    if (!Object.keys(this.state.addresses_filter).length)
+    if (!Object.keys(this.state.from_to_tx_filter).length)
       return links
     this.filtered_hashes = {}
     for (const r of Object.values(this.receipts))
-      if (this.state.addresses_filter[r.from] || this.state.addresses_filter[r.to])
+      if (this.state.from_to_tx_filter[r.from] || this.state.from_to_tx_filter[r.to])
         this.filtered_hashes[r.transactionHash] = true
     filterInPlace(links, l => l.transfers.some(tf => this.filtered_hashes[tf.transaction_hash]))
     return links
@@ -526,7 +524,7 @@ class App extends PureComponent {
 
   filter_links = links => {
     const copy = [...links]
-    const filtered = this.filter_links_by_address(this.filter_links_by_token(this.filter_links_by_from_to(copy)))
+    const filtered = this.filter_links_by_address(this.filter_links_by_token(this.filter_links_by_from_to_transfer(copy)))
     return filtered
   }
 
@@ -543,7 +541,7 @@ class App extends PureComponent {
 
   filter_transfers = transfers => {
     const has_token_filter = Object.keys(this.state.tokens_filter).length,
-          has_address_filter = Object.keys(this.state.addresses_filter).length
+          has_address_filter = Object.keys(this.state.from_to_tx_filter).length
     return transfers.filter(tf => (!has_token_filter || this.state.tokens_filter[tf.token_address]) && (!has_address_filter || this.filtered_hashes[tf.transaction_hash]))
   }
 
@@ -558,7 +556,7 @@ class App extends PureComponent {
       return
     this.filters_prev_state = new_state
 
-    if (Object.keys(this.state.tokens_filter).length || Object.keys(this.state.addresses_filter).length) {
+    if (Object.keys(this.state.tokens_filter).length || Object.keys(this.state.from_to_tx_filter).length) {
       for (const n of this.filtered_nodes) {
         n.filtered_transfers = this.filter_transfers(n.transfers)
         n.filtered_balances = {}
