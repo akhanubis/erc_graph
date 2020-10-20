@@ -7,7 +7,7 @@ const LoadingPanel = ({ loading }) => {
     <div key="1" className="loading-background">
       <div className="loading-bar-container">
         <div className="loading-bar-label">
-          Processing transaction
+          Processing logs...
         </div>
         <div className="loading-bar-hint">
           <a href="https://www.linkedin.com/in/pablobianciotto/" target="_blank">

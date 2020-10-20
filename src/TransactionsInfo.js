@@ -22,8 +22,6 @@ const TransactionsInfo = ({ element }) => {
 
   const total_height = entries.reduce((out, _, i) => out + get_tx_height(i), 0)
 
-  console.log(total_height)
-
   return (
     <div className="extra-info" style={{ height: Math.min(total_height, TABLE_SIZE_IN_PIXELS) }}>
       <AutoSizer>
