@@ -8,6 +8,7 @@ UI de filtrar por from y to de la tx
 mempool version, va metiendo tx por tx y cuando se mina un bloque saca todas las que fueron minadas
 
 nice to have:
+virtualized table element info
 obtener internal tx usando https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=0x0414c8df68b8086a36c3c7990196ab9c48fa455678b132094b085d9091656b05&apikey=YourApiKeyToken
 filter para filtrar por address y poder traer history mas facil
 filter para filtrar por token y poder traer history mas facil
@@ -467,7 +468,7 @@ class App extends PureComponent {
     }
     visible_nodes.forEach(this.transform_node)
 
-    this.main_drawer.draw(this.drawing_scale, visible_nodes, visible_links, this.zoom_transform.k > 0.1)
+    this.main_drawer.draw(this.drawing_scale, visible_nodes, visible_links, this.zoom_transform.k > 0.2, this.drawing_scale > 0.5 && this.zoom_transform.k > 0.4)
   }
 
   draw_outlines = _ => {

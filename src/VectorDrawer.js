@@ -21,7 +21,7 @@ class VectorDrawer extends Drawer {
     this.draw_circle(n)
     this.ctx.fill()
     this.ctx.stroke()
-    if (draw_name && this.drawing_scale > 0.5)
+    if (draw_name)
       this.draw_text(n, n.label)
   }
 
