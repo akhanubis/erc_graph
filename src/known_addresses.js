@@ -426,7 +426,7 @@ export const loadSubgraphs = async callback => {
       const address = p.id,
             symbols = p.tokens.map(t => t.symbol),
             total_weight = p.tokens.reduce((out, t) => out.plus(t.denormWeight), new BigNumber(0)),
-            weights = p.tokens.map(t => 100 * new BigNumber(t.denormWeight).times(100).div(total_weight).integerValue().toString()),
+            weights = p.tokens.map(t => new BigNumber(t.denormWeight).times(100).div(total_weight).integerValue().toString()),
             label = `Balancer: ${ symbols.join('/') } ${ weights.join('/') }`
       BY_PROTOCOL.balancer[address] = label
       KNOWN_ADDRESSES[address] = label
