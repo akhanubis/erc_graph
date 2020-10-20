@@ -1,6 +1,5 @@
 /*
 TODO:
-usar thegraph para traer lista de exchnages de uniswap, balancer, etc y con eso poder tagear y colorear nodos
 sidebar
 remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 UI de filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link, el checkbox define si se usa filtered o no para transfers
@@ -29,7 +28,7 @@ import TokensMetadata from './TokensMetadata'
 import ElementInfo from './ElementInfo'
 import { filterInPlace, promisesInChunk } from './utils'
 import { addressName, addressLabel, addressColor, reverseENS } from './address_label'
-import { BY_PROTOCOL } from './known_addresses'
+import { BY_PROTOCOL, loadSubgraphs } from './known_addresses'
 import pSBC from './psbc'
 import 'babel-polyfill'
 
@@ -162,7 +161,7 @@ class App extends PureComponent {
     d3.select(window).on('resize', this.resize_and_restart)
 
     start_web3()
-    
+
     if (this.transaction_hash) {
       await this.load_transaction(this.transaction_hash)
       this.setState({ loading: false })
@@ -178,6 +177,8 @@ class App extends PureComponent {
     
     this.previous_ts = window.performance.now()
     window.requestAnimationFrame(this.loop)
+
+    loadSubgraphs(address => this.update_node_metadata(address))
   }
 
   listen_for_new_logs = async initial_bn => {
@@ -424,6 +425,16 @@ class App extends PureComponent {
         n.name = name
       }
     }
+  }
+
+  update_node_metadata = address => {
+    const node = this.address_to_node[address]
+    if (!node)
+      return
+    node.label = addressLabel(address)
+    node.name = addressName(address)
+    node.color = addressColor(address)
+    node.outline_color = pSBC(-0.5, node.color)
   }
 
   loop = ts => {

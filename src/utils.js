@@ -11,3 +11,19 @@ export const filterInPlace = (array, condition) => {
   array.splice(next_place)
   return array
 }
+
+export const retryablePromise = (promise_fn, max_retries = 3, tries = 0) => {
+  return promise_fn()
+  .catch(e => {
+    tries++
+    console.log(e)
+    if (tries <= max_retries) {
+      console.log('Retryable promise failed, retrying', tries)
+      return exports.retryable_promise(promise_fn, max_retries, tries)
+    }
+    else {
+      console.log('Retryable promise failed, out of retries')
+      throw(e)
+    }
+  })
+}
