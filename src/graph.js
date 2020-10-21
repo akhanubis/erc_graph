@@ -71,14 +71,13 @@ const start_web3 = _ => {
 
 const sort_transfers = (a, b) => a.block_number === b.block_number ? (a.log_index - b.log_index) : (a.block_number - b.block_number)
 
-const query_string_to_address_list = value => (value || '').split(',').map(a => a.trim()).filter(a => a)
+const query_string_to_list = value => (value || '').split(',').map(a => a.trim()).filter(a => a)
 
 class App extends PureComponent {
   constructor() {
     super()
     const url_params = new URLSearchParams(window.location.search)
 
-    this.transaction_hash = url_params.get('hash')
     this.resolve_ens = url_params.get('ens') === 'true'
     this.initialized = false
     this.pending_logs = []
@@ -115,13 +114,13 @@ class App extends PureComponent {
       tokens_filter: {}
     }
 
-    for (const address of query_string_to_address_list(url_params.get('filterFromToTx')))
+    for (const address of query_string_to_list(url_params.get('filterFromToTx')))
       this.state.from_to_tx_filter[address] = true
 
-    for (const address of query_string_to_address_list(url_params.get('filterFromToTransfer')))
+    for (const address of query_string_to_list(url_params.get('filterFromToTransfer')))
       this.state.from_to_transfer_filter[address] = true
 
-    for (const address of query_string_to_address_list(url_params.get('filterTokens')))
+    for (const address of query_string_to_list(url_params.get('filterTokens')))
       this.state.tokens_filter[address] = true
 
     this.url_params = url_params
@@ -174,8 +173,9 @@ class App extends PureComponent {
 
     start_web3()
 
-    if (this.transaction_hash) {
-      await this.load_transaction(this.transaction_hash)
+    const transaction_hashes = query_string_to_list(this.url_params.get('hash'))
+    if (transaction_hashes.length) {
+      await this.load_transactions(transaction_hashes)
       this.setState({ loading: false })
       this.after_load()
     }
@@ -246,6 +246,10 @@ class App extends PureComponent {
     setTimeout(this.process_pending_logs, 1000)
   }
 
+  load_transactions = async hashes => {
+    await promisesInChunk(hashes, METAMASK_ENABLED ? METAMASK_MAX_CONCURRENCY : POCKET_MAX_CONCURRENCY, this.load_transaction)
+  }
+  
   load_transaction = async hash => {
     const receipt = await window.web3.eth.getTransactionReceipt(hash)
     if (!receipt)
