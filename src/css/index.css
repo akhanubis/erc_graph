@@ -19,6 +19,10 @@ html, body, #root, .main {
   justify-content: center;
 }
 
+.main input.form-check-input {
+  margin-top: 13px;
+}
+
 .btn {
   font-family: 'Roboto Condensed', sans-serif;
   font-weight: 300;

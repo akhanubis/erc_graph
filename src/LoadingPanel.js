@@ -24,9 +24,7 @@ const LoadingPanel = ({ loading, progress, total }) => {
           </div>
         </div>}
         <div className="loading-bar-hint">
-          <a href="https://www.linkedin.com/in/pablobianciotto/" target="_blank">
-            © pablo bianciotto
-          </a>
+          use mouse wheel to zoom and pan (hold and move)
         </div>
       </div>
     </div>
