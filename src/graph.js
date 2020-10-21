@@ -439,6 +439,8 @@ class App extends PureComponent {
     }
 
     this.setState({ total_transfers_count: total_transfers, total_addresses_count: this.nodes.length })
+
+    this.restart_simulation()
   }
 
   fetch_address_metadata = async address => {
