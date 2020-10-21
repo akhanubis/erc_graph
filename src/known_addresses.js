@@ -408,7 +408,7 @@ const load_uniswap_like_pairs = async (subgraph, callback) => {
           }
         }`
       })
-    }).then(r => r.json()).then(r => r.data.pairs))
+    }).then(r => r.json()).then(r => r.data.pairs), 5)
 
     for (const p of pairs)
       callback(p)
@@ -441,7 +441,7 @@ const load_balancer_pools = async callback => {
           }
         }`
       })
-    }).then(r => r.json()).then(r => r.data.pools))
+    }).then(r => r.json()).then(r => r.data.pools), 5)
 
     for (const p of pools)
       callback(p)

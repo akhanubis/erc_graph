@@ -1,0 +1,22 @@
+.block-info-container {
+  padding: 10px 0;
+  width: 100%;
+  font-family: 'Roboto Condensed', sans-serif;
+  border-top: 1px solid rgba(0,0,0,.125);
+  height: 130px;
+}
+
+.block-info-container .block-info-title {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: 11px;
+}
+
+.block-info-container .info {
+  font-size: 14px;
+  padding-bottom: 5px;
+}
+
+.block-info-container .elements-count {
+  font-size: 14px;
+}

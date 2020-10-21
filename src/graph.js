@@ -1,17 +1,9 @@
 /*
 sidebar
+decir en algun lado que el mouse wheel mueve la camara y demas: en INFO section
 UI de filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link, el checkbox define si se usa filtered o no para transfers
-UI de filtrar por from y to de la transfer
-UI de filtrar por from y to de la tx
-
-filter by transfer amount
 
 nice to have:
-obtener internal tx usando https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=0x0414c8df68b8086a36c3c7990196ab9c48fa455678b132094b085d9091656b05&apikey=YourApiKeyToken
-filter para filtrar por address y poder traer history mas facil
-filter para filtrar por token y poder traer history mas facil
-backend to request everything only once
-
 remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 guardo tx hashes por bloq num
 para remove, voy limpiando los transfers cuyo hash es del bloque a sacar
@@ -20,6 +12,11 @@ desp agrego bloq nuevo
 desp recalc balances de links
 desp recalc balances de nodos 
 desp borro nodos que no tienen keys en balance
+
+obtener internal tx usando https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=0x0414c8df68b8086a36c3c7990196ab9c48fa455678b132094b085d9091656b05&apikey=YourApiKeyToken
+filter para filtrar por address y poder traer history mas facil
+filter para filtrar por token y poder traer history mas facil
+backend to request everything only once
 */
 import "regenerator-runtime/runtime.js"
 import React, { PureComponent } from 'react'
@@ -34,6 +31,7 @@ import Drawer from './VectorDrawer'
 import DataUtils from './data_utils'
 import TokensMetadata from './TokensMetadata'
 import ElementInfo from './ElementInfo'
+import SidePanel from './SidePanel'
 import { filterInPlace, promisesInChunk } from './utils'
 import { addressName, addressLabel, addressColor, reverseENS } from './address_label'
 import { BY_PROTOCOL, loadSubgraphs } from './known_addresses'
@@ -111,7 +109,15 @@ class App extends PureComponent {
       from_to_transfer_filter: {
         ...BY_PROTOCOL[url_params.get('filterFromToTransferProtocol')]
       },
-      tokens_filter: {}
+      tokens_filter: {},
+      transfer_amount_filter: {
+        min: null,
+        max: null
+      },
+      transfers_count: '',
+      addresses_count: '',
+      total_transfers_count: '',
+      total_addresses_count: ''
     }
 
     for (const address of query_string_to_list(url_params.get('filterFromToTx')))
@@ -197,6 +203,8 @@ class App extends PureComponent {
     const latest_bn = to === 'latest' ? (await window.web3.eth.getBlock(to)).number : to
     from = from || latest_bn - DEFAULT_HISTORY_SIZE + 1
 
+    this.setState({ start_block: from, end_block: latest_bn })
+
     const logs_params = {
       toBlock: to,
       topics: [[TRANSFER_TOPIC, WETH_WRAP_TOPIC, WETH_UNWRAP_TOPIC]]
@@ -209,6 +217,8 @@ class App extends PureComponent {
         fromBlock: from,
         ...logs_params
       }).on('data', log => this.pending_logs.push(log))
+      if (to === 'latest')
+        window.web3.eth.subscribe('newBlockHeaders').on('data', block_info => this.setState({ end_block: block_info.number }))
     }
     else {
       setInterval((_ => {
@@ -217,6 +227,8 @@ class App extends PureComponent {
           const latest_block = (await window.web3.eth.getBlock(to)).number
           if (latest_block <= last_block)
             return
+          if (to === 'latest')
+            this.setState({ end_block: latest_block })
           const logs = await window.web3.eth.getPastLogs({
             fromBlock: last_block + 1,
             ...logs_params
@@ -238,6 +250,7 @@ class App extends PureComponent {
         unique_new_txs[tx] = true
       // if (logs.length)
       //   this.setState({ loading: true })
+      this.setState({ loading_total: Object.keys(unique_new_txs).length, loading_progress: 0 })
       await promisesInChunk(Object.keys(unique_new_txs), METAMASK_ENABLED ? METAMASK_MAX_CONCURRENCY : POCKET_MAX_CONCURRENCY, this.load_transaction)
       this.setState({ loading: false })
       this.after_load()
@@ -247,9 +260,10 @@ class App extends PureComponent {
   }
 
   load_transactions = async hashes => {
+    this.setState({ loading_total: hashes.length, loading_progress: 0 })
     await promisesInChunk(hashes, METAMASK_ENABLED ? METAMASK_MAX_CONCURRENCY : POCKET_MAX_CONCURRENCY, this.load_transaction)
   }
-  
+
   load_transaction = async hash => {
     const receipt = await window.web3.eth.getTransactionReceipt(hash)
     if (!receipt)
@@ -322,7 +336,8 @@ class App extends PureComponent {
           type: 'address',
           radius: 30,
           color,
-          outline_color: pSBC(-0.5, color)
+          outline_color: pSBC(-0.5, color),
+          transfers: []
         }
         this.nodes.push(node)
         this.address_to_node[address] = node
@@ -356,6 +371,8 @@ class App extends PureComponent {
       for (const t of ts)
         l.transfers.push(t)
     }
+
+    this.setState(prev_state => ({ loading_progress: prev_state.loading_progress + 1 }))
   }
 
   after_load = _ => {
@@ -364,6 +381,7 @@ class App extends PureComponent {
       n.transfers = []
     }
 
+    let total_transfers = 0
     for (const l of this.links) {
       const [source, target] = l.key.split('_'),
             source_amounts = {},
@@ -376,6 +394,7 @@ class App extends PureComponent {
       l.transfers.sort(sort_transfers)
 
       for (const t of l.transfers) {
+        total_transfers++
         source_amounts[t.token_address] = (source_amounts[t.token_address] || new BigNumber(0))[t.sender === source ? 'minus' : 'plus'](t.amount)
         target_amounts[t.token_address] = (target_amounts[t.token_address] || new BigNumber(0))[t.sender === target ? 'minus' : 'plus'](t.amount)
         if (t.sender === source) {
@@ -418,6 +437,8 @@ class App extends PureComponent {
       source_node_transfers.sort(sort_transfers)
       target_node_transfers.sort(sort_transfers)
     }
+
+    this.setState({ total_transfers_count: total_transfers, total_addresses_count: this.nodes.length })
   }
 
   fetch_address_metadata = async address => {
@@ -533,20 +554,24 @@ class App extends PureComponent {
     for (const r of Object.values(this.receipts))
       if (this.state.from_to_tx_filter[r.from] || this.state.from_to_tx_filter[r.to])
         this.filtered_hashes[r.transactionHash] = true
-    filterInPlace(links, l => l.transfers.some(tf => this.filtered_hashes[tf.transaction_hash]))
+    filterInPlace(links, l => l.transfers.some(this.filter_transfer_by_hash))
     return links
   }
 
   filter_links_by_token = links => {
-    if (!this.has_token_filter())
-      return links
-    filterInPlace(links, l => l.transfers.some(tf => this.state.tokens_filter[tf.token_address]))
+    /* use AND when both filters present */
+    if (this.has_token_filter() && this.has_transfer_amount_filter())
+      filterInPlace(links, l => l.transfers.some(tf => this.filter_transfer_by_token(tf) && this.filter_transfer_by_amount(tf)))
+    else if (this.has_token_filter())
+      filterInPlace(links, l => l.transfers.some(this.filter_transfer_by_token))
+    else if (this.has_transfer_amount_filter())
+      filterInPlace(links, l => l.transfers.some(this.filter_transfer_by_amount))
     return links
   }
 
   filter_links = links => {
     const copy = [...links]
-    const filtered = this.filter_links_by_address(this.filter_links_by_token(this.filter_links_by_from_to_transfer(copy)))
+    const filtered = this.filter_links_by_token(this.filter_links_by_address(this.filter_links_by_from_to_transfer(copy)))
     return filtered
   }
 
@@ -561,15 +586,30 @@ class App extends PureComponent {
 
   unique_filters_state_id = _ => `${ this.filtered_nodes.map(n => n.identifier).sort().join('__') }____${ this.filtered_links.map(l => l.hash).sort().join('__') }`
 
-  has_token_filter = _ => Object.keys(this.state.tokens_filter).length
+  has_token_filter = _ => Object.values(this.state.tokens_filter).some(v => v)
 
-  has_from_to_tx_filter = _ => Object.keys(this.state.from_to_tx_filter).length
+  has_from_to_tx_filter = _ => Object.values(this.state.from_to_tx_filter).some(v => v)
 
-  has_from_to_transfer_filter = _ => Object.keys(this.state.from_to_transfer_filter).length
+  has_from_to_transfer_filter = _ => Object.values(this.state.from_to_transfer_filter).some(v => v)
+
+  has_transfer_amount_filter = _ => this.state.transfer_amount_filter.min !== null || this.state.transfer_amount_filter.max !== null
+
+  filter_transfer_by_hash = transfer => this.filtered_hashes[transfer.transaction_hash]
+
+  filter_transfer_by_token = transfer => this.state.tokens_filter[transfer.token_address]
+
+  filter_transfer_by_amount = transfer => {
+    const amount = TokensMetadata.fromDecimals(transfer.amount, transfer.token_address)
+    return (this.state.transfer_amount_filter.min === null || amount.gte(this.state.transfer_amount_filter.min)) && (this.state.transfer_amount_filter.max === null || amount.lte(this.state.transfer_amount_filter.max))
+  }
 
   filter_transfers = transfers => {
-    return transfers.filter(tf => (!this.has_token_filter() || this.state.tokens_filter[tf.token_address]) && (!this.has_from_to_tx_filter() || this.filtered_hashes[tf.transaction_hash]))
+    return transfers.filter(tf =>
+      (!this.has_token_filter() || this.filter_transfer_by_token(tf)) &&
+      (!this.has_from_to_tx_filter() || this.filter_transfer_by_hash(tf)) &&
+      (!this.has_transfer_amount_filter() || this.filter_transfer_by_amount(tf)))
   }
+  
 
   restart_simulation = _ => {
     const filtered_links = this.filter_links(this.links),
@@ -582,7 +622,8 @@ class App extends PureComponent {
       return
     this.filters_prev_state = new_state
 
-    if (this.has_token_filter() || this.has_from_to_tx_filter()) {
+    let filtered_transfers_count = 0
+    if (this.has_token_filter() || this.has_from_to_tx_filter() || this.has_transfer_amount_filter()) {
       for (const n of this.filtered_nodes) {
         n.filtered_transfers = this.filter_transfers(n.transfers)
         n.filtered_balances = {}
@@ -610,6 +651,7 @@ class App extends PureComponent {
         l.filtered_target_amounts = target_amounts
         l.filtered_source_icons = Object.keys(source_icons)
         l.filtered_target_icons = Object.keys(target_icons)
+        filtered_transfers_count += l.filtered_transfers.length
       }
     }
     else {
@@ -623,13 +665,16 @@ class App extends PureComponent {
         l.filtered_source_icons = l.source_icons
         l.filtered_target_icons = l.target_icons
         l.filtered_transfers = l.transfers
+        filtered_transfers_count += l.transfers.length
       }
     }
 
-    this.filtered_links.sort((a, b) => a.width - b.width) /* from thinnest to widest so widest get drawn last */
-    this.force.nodes(this.filtered_nodes)
-    this.force.force("link").links(this.filtered_links)
-    this.restart_forces()
+    this.setState({ transfers_count: filtered_transfers_count, addresses_count: this.filtered_nodes.length }, () => {
+      this.filtered_links.sort((a, b) => a.width - b.width) /* from thinnest to widest so widest get drawn last */
+      this.force.nodes(this.filtered_nodes)
+      this.force.force("link").links(this.filtered_links)
+      this.restart_forces()
+    })
   }
 
   restart_forces = _ => {
@@ -744,11 +789,58 @@ class App extends PureComponent {
     return max_x > this.viewport_bb.min[0] && min_x < this.viewport_bb.max[0] && max_y > this.viewport_bb.min[1] && min_y < this.viewport_bb.max[1]
   }
 
+  on_token_filter_update = filters => this.setState({ tokens_filter: filters }, this.restart_simulation)
+
+  on_from_to_transfer_filter_update = filters => this.setState({ from_to_transfer_filter: filters }, this.restart_simulation)
+
+  on_from_to_tx_filter_update = filters => this.setState({ from_to_tx_filter: filters }, this.restart_simulation)
+
+  on_transfer_amount_filter_update = filters => this.setState({ transfer_amount_filter: filters }, this.restart_simulation)
+
+  reset_view = _ => d3.select(this.canvas).call(this.zoom_behaviour.transform, d3.zoomIdentity)
+
   render() {
     const current_alpha = this.force ? this.force.alpha() : 1
-    const { fps, loading, force_running, viewport_size, clicked_element_ts, hovered_element, clicked_element,  } = this.state 
+    const {
+      fps,
+      loading,
+      force_running,
+      viewport_size,
+      clicked_element_ts,
+      hovered_element,
+      clicked_element,
+      tokens_filter,
+      from_to_transfer_filter,
+      from_to_tx_filter,
+      transfer_amount_filter,
+      transfers_count,
+      addresses_count,
+      total_transfers_count,
+      total_addresses_count,
+      start_block,
+      end_block,
+      loading_progress,
+      loading_total
+    } = this.state 
     return ([
       <div className='main-container' key="1">
+        <SidePanel
+          token_filter={tokens_filter}
+          on_token_filter_update={this.on_token_filter_update}
+          from_to_transfer_filter={from_to_transfer_filter}
+          on_from_to_transfer_filter_update={this.on_from_to_transfer_filter_update}
+          from_to_tx_filter={from_to_tx_filter}
+          on_from_to_tx_filter_update={this.on_from_to_tx_filter_update}
+          transfer_amount_filter={transfer_amount_filter}
+          on_transfer_amount_filter_update={this.on_transfer_amount_filter_update}
+          start_block={start_block}
+          end_block={end_block}
+          transfers_count={transfers_count}
+          addresses_count={addresses_count}
+          total_transfers_count={total_transfers_count}
+          total_addresses_count={total_addresses_count}
+          on_reset_view={this.reset_view}
+        />
         <div className="canvas-container">
           <canvas className="main-canvas" ref={c => this.canvas = c}/>
           <Fps fps={fps} running={force_running} alpha={current_alpha}/>
@@ -757,7 +849,7 @@ class App extends PureComponent {
           <ElementInfo transformation_matrix={this.zoom_transform} viewport_size={viewport_size} element={hovered_element} default_color={DEFAULT_HOVER_COLOR} hidden={loading || clicked_element === hovered_element} />
         </div>
       </div>,
-      <LoadingPanel key="2" loading={loading}/>
+      <LoadingPanel key="2" loading={loading} total={loading_total} progress={loading_progress}/>
     ])
   }
 }

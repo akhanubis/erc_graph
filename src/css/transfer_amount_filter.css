@@ -1,0 +1,14 @@
+.transfer-amount-filter .filters {
+  display: flex;
+  justify-content: space-between;
+}
+
+.transfer-amount-filter .filters .form-row:nth-child(1) {
+  width: 50%;
+  justify-content: flex-start;
+}
+
+.transfer-amount-filter .filters .form-row:nth-child(2) {
+  width: 50%;
+  justify-content: flex-end;
+}

@@ -15,6 +15,7 @@
   "dependencies": {
     "axios": "^0.18.1",
     "bignumber.js": "^9.0.0",
+    "css-element-queries": "^1.2.3",
     "d3": "^4.13.0",
     "ethers": "^5.0.18",
     "react": "^16.13.1",
