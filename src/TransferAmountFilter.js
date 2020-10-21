@@ -25,11 +25,11 @@ const TransferAmountFilter = ({ on_update }) => {
   return (
     <div className="transfer-amount-filter filter-section">
       <div className="filter-label">
-        Filter by transfer amount (experimental)
+        Filter by transfer amount
       </div>
       <div className="filters">
         <Form.Group as={Form.Row}>
-          <Form.Label column sm="3">
+          <Form.Label column sm="5">
             Min
           </Form.Label>
           <Col sm="7">
@@ -38,7 +38,7 @@ const TransferAmountFilter = ({ on_update }) => {
         </Form.Group>
 
         <Form.Group as={Form.Row}>
-          <Form.Label column sm="3">
+          <Form.Label column sm="5">
             Max
           </Form.Label>
           <Col sm="7">

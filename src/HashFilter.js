@@ -1,12 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Form } from 'react-bootstrap'
 
 const HashFilter = ({ filters, on_update, title }) => {
-  const as_string = Object.keys(filters).join("\n")
-
+  const [input_value, set_input_value] = useState(Object.keys(filters).join("\n"))
+  
   const update_filters = e => {
-    const as_hash = e.target.value.split("\n").map(a => a.trim()).filter(a => a).reduce((out, address) => ({ ...out, [address]: true }), {})
+    const as_hash = e.target.value.split("\n").map(a => a.trim().toLowerCase()).filter(a => a).reduce((out, address) => ({ ...out, [address]: true }), {})
     on_update(as_hash)
+    set_input_value(e.target.value)
   }
 
   return (
@@ -15,7 +16,7 @@ const HashFilter = ({ filters, on_update, title }) => {
         {title}
       </div>
       <div className="filters-container">
-        <Form.Control as="textarea" rows="3" value={as_string} onChange={update_filters}/>
+        <Form.Control as="textarea" rows="3" value={input_value} onChange={update_filters}/>
       </div>
     </div>
   )

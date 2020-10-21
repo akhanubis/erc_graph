@@ -192,6 +192,11 @@
 
 .sidebar .filter-section {
   padding: 10px 0;
+  font-size: 13px;
+}
+
+.sidebar .filter-section .form-control {
+  font-size: 12px;
 }
 
 .sidebar .filter-section .filter-label {

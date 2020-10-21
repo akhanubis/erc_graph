@@ -1,7 +1,7 @@
 /*
-sidebar
-decir en algun lado que el mouse wheel mueve la camara y demas: en INFO section
 UI de filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link, el checkbox define si se usa filtered o no para transfers
+add the ability to enter a list of tx hashes so people can plot w/e they are interested in (you use public eth bq dataset, get the txs you need and paste their hashes in the site)
+paginar si >10k logs
 
 nice to have:
 remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
