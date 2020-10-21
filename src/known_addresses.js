@@ -33,6 +33,8 @@ export const BY_PROTOCOL = {
   sushiswap: {
     '0xc2edad668740f1aa35e4d8f227fb8e17dca888cd': 'SushiSwap: MasterChef',
     '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f': 'SushiSwap: Router',
+    '0x6684977bbed67e101bb80fc07fccfba655c0a64f': 'SushiSwap: SushiMaker',
+    '0x8798249c2e607446efb7ad49ec89dd1865ff4272': 'SushiSwap: SushiBar',
   },
   uniswap: {
     '0x7a250d5630b4cf539739df2c5dacb4c659f2488d': 'Uniswap V2: Router',
@@ -208,6 +210,44 @@ export const BY_PROTOCOL = {
     '0xf53ad2c6851052a81b42133467480961b2321c09': 'Pooled Ether',
     '0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4': 'ProtoSAI Token',
     '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359': 'Sai Stablecoin',
+  },
+  dodo: {
+    '0x43dfc4159d86f3a37a5a4b3d4580b888ad7d4ddd': 'DODO: DODO Token',
+    '0x8876819535b48b551c9e97ebc07332c7482b4b2d': 'DODO: DODO Pair: DODO-USDT',
+    '0xaed7384f03844af886b830862ff0a7afce0a632c': 'DODO: DODO Mining',
+    '0x0e504d3e053885a82bd1cb5c29cbaae5b3673be4': 'DODO: Pre-allocation',
+    '0x4447183c50e82a8b0141718c405381a3b1bad634': 'DODO: Incentive Program Reserve',
+    '0x5c37d4f0e8d03820bec925e105a53fd94f6cf4ab': 'DODO: Locked Token Vault 1',
+    '0xdb9119789116dc4fb6f42a4e0d76856142cfff5f': 'DODO: Locked Token Vault 2',
+    '0x3e19d726ed435afd3a42967551426b3a47c0f5b7': 'DODO: Undistributed Token Vault',
+    '0x75c23271661d9d143dcb617222bc4bec783eff34': 'DODO: DODO Pair: WETH-USDC',
+    '0x562c0b218cc9ba06d9eb42f3aef54c54cc5a4650': 'DODO: DODO Pair: LINK-USDC',
+    '0xc226118fcd120634400ce228d61e1538fb21755f': 'DODO: DODO Pair: LEND-USDC',
+    '0xca7b0632bd0e646b0f823927d3d2e61b00fe4d80': 'DODO: DODO Pair: SNX-USDC',
+    '0x0d04146b2fe5d267629a7eb341fb4388dcdbd22f': 'DODO: DODO Pair: COMP-USDC',
+    '0x2109f78b46a789125598f5ad2b7f243751c2934d': 'DODO: DODO Pair: WBTC-USDC',
+    '0x1b7902a66f133d899130bf44d7d879da89913b2e': 'DODO: DODO Pair: YFI-USDC',
+    '0x9d9793e1e18cdee6cf63818315d55244f73ec006': 'DODO: DODO Pair: FIN-USDT',
+    '0x3a97247df274a17c59a3bd12735ea3fcdfb49950': 'DODO: DODO Zoo',
+    '0x37adc35f7b12582240818df04aac04ca409d5913': 'DODO: DODO EthProxy',
+    '0x3d7cbd8ae59505283d438eb6ff54b8b42d0c98a6': 'DODO: DODO EthProxy (compatible)',
+    '0xbf90b54cc00ceeaa93db1f6a54a01e3fe9ed4422': 'DODO: Uniswap arbitrageur',
+    '0x6dae6ae227438378c117821c51fd61661faa8893': 'DODO: Multisig Wallet with Time Lock',
+    '0x95c4f5b83aa70810d4f142d58e5f7242bd891cb0': 'DODO: Gnosis Multisig Wallet',
+    '0xc11eccdee225d644f873776a68a02ecd8c015697': 'DODO: WETH-USDC : WETH',
+    '0x6a5eb3555cbbd29016ba6f6ffbccee28d57b2932': 'DODO: WETH-USDC : USDC',
+    '0xf03f3d2fbee37f92ec91ae927a8019cacef4b738': 'DODO: LINK-USDC : LINK',
+    '0x0f769bc3ecbda8e0d78280c88e31609e899a1f78': 'DODO: LINK-USDC : USDC',
+    '0xbf999544b31706c5fef693b64a6c2cd8ddb5bbec': 'DODO: LEND-USDC : LEND',
+    '0xd768b486645717a55ed97126bbe2eb8b02f0e9b3': 'DODO: LEND-USDC : USDC',
+    '0x5bd1b7d3930d7a5e8fd5aeec6b931c822c8be14e': 'DODO: SNX-USDC: SNX',
+    '0x1b06a22b20362b4115388ab8ca3ed0972230d78a': 'DODO: SNX-USDC: USDC',
+    '0x53cf4694b427fcef9bb1f4438b68df51a10228d0': 'DODO: COMP-USDC: COMP',
+    '0x51baf2656778ad6d67b19a419f91d38c3d0b87b6': 'DODO: COMP-USDC: USDC',
+    '0x2ec2a42901c761b295a9e6b95200cd0bdaa474eb': 'DODO: WBTC-USDC: WBTC',
+    '0x0cdb21e20597d753c90458f5ef2083f6695eb794': 'DODO: WBTC-USDC: USDC',
+    '0xe2852c572fc42c9e2ec03197defa42c647e89291': 'DODO: YFI-USDC: YFI',
+    '0xd9d0bd18ddfa753d0c88a060ffb60657bb0d7a07': 'DODO: YFI-USDC: USDC',
   }
 }
 
@@ -334,7 +374,8 @@ export const COLORS_BY_PROTOCOL = {
   curve: '#1976D2',
   uma: '#F44336',
   compound: '#4CAF50',
-  balancer: '#607D8B'
+  balancer: '#607D8B',
+  dodo: '#FFEB3B'
 }
 
 export const KNOWN_ADDRESSES_COLORS = {}

@@ -1,18 +1,25 @@
 /*
-TODO:
 sidebar
-remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 UI de filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link, el checkbox define si se usa filtered o no para transfers
 UI de filtrar por from y to de la transfer
 UI de filtrar por from y to de la tx
-mempool version, va metiendo tx por tx y cuando se mina un bloque saca todas las que fueron minadas
+
+filter by transfer amount
 
 nice to have:
-virtualized table element info
 obtener internal tx usando https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=0x0414c8df68b8086a36c3c7990196ab9c48fa455678b132094b085d9091656b05&apikey=YourApiKeyToken
 filter para filtrar por address y poder traer history mas facil
 filter para filtrar por token y poder traer history mas facil
 backend to request everything only once
+
+remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
+guardo tx hashes por bloq num
+para remove, voy limpiando los transfers cuyo hash es del bloque a sacar
+desp borro links que quedaron en 0 transfers
+desp agrego bloq nuevo
+desp recalc balances de links
+desp recalc balances de nodos 
+desp borro nodos que no tienen keys en balance
 */
 import "regenerator-runtime/runtime.js"
 import React, { PureComponent } from 'react'
@@ -34,7 +41,7 @@ import pSBC from './psbc'
 import 'babel-polyfill'
 
 import './css/bootstrap.min.css'
-import './css/index.css'
+import './css/graph.css'
 
 const
   TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
@@ -64,13 +71,15 @@ const start_web3 = _ => {
 
 const sort_transfers = (a, b) => a.block_number === b.block_number ? (a.log_index - b.log_index) : (a.block_number - b.block_number)
 
+const query_string_to_address_list = value => (value || '').split(',').map(a => a.trim()).filter(a => a)
+
 class App extends PureComponent {
   constructor() {
     super()
     const url_params = new URLSearchParams(window.location.search)
 
     this.transaction_hash = url_params.get('hash')
-    this.resolve_ens = url_params.get('ens')
+    this.resolve_ens = url_params.get('ens') === 'true'
     this.initialized = false
     this.pending_logs = []
     this.tokens_metadata = {}
@@ -106,13 +115,13 @@ class App extends PureComponent {
       tokens_filter: {}
     }
 
-    for (const address of url_params.get('filterFromToTx') || [])
+    for (const address of query_string_to_address_list(url_params.get('filterFromToTx')))
       this.state.from_to_tx_filter[address] = true
 
-    for (const address of url_params.get('filterFromToTransfer') || [])
+    for (const address of query_string_to_address_list(url_params.get('filterFromToTransfer')))
       this.state.from_to_transfer_filter[address] = true
 
-    for (const address of url_params.get('filterTokens') || [])
+    for (const address of query_string_to_address_list(url_params.get('filterTokens')))
       this.state.tokens_filter[address] = true
 
     this.url_params = url_params
@@ -508,13 +517,13 @@ class App extends PureComponent {
   }
 
   filter_links_by_from_to_transfer = links => {
-    if (Object.keys(this.state.from_to_transfer_filter).length)
+    if (this.has_from_to_transfer_filter())
       filterInPlace(links, l => this.state.from_to_transfer_filter[l.source_address] || this.state.from_to_transfer_filter[l.target_address] || this.state.from_to_transfer_filter[l.source.name] || this.state.from_to_transfer_filter[l.target.name])
     return links
   }
 
   filter_links_by_address = links => {
-    if (!Object.keys(this.state.from_to_tx_filter).length)
+    if (!this.has_from_to_tx_filter())
       return links
     this.filtered_hashes = {}
     for (const r of Object.values(this.receipts))
@@ -525,7 +534,7 @@ class App extends PureComponent {
   }
 
   filter_links_by_token = links => {
-    if (!Object.keys(this.state.tokens_filter).length)
+    if (!this.has_token_filter())
       return links
     filterInPlace(links, l => l.transfers.some(tf => this.state.tokens_filter[tf.token_address]))
     return links
@@ -548,10 +557,14 @@ class App extends PureComponent {
 
   unique_filters_state_id = _ => `${ this.filtered_nodes.map(n => n.identifier).sort().join('__') }____${ this.filtered_links.map(l => l.hash).sort().join('__') }`
 
+  has_token_filter = _ => Object.keys(this.state.tokens_filter).length
+
+  has_from_to_tx_filter = _ => Object.keys(this.state.from_to_tx_filter).length
+
+  has_from_to_transfer_filter = _ => Object.keys(this.state.from_to_transfer_filter).length
+
   filter_transfers = transfers => {
-    const has_token_filter = Object.keys(this.state.tokens_filter).length,
-          has_address_filter = Object.keys(this.state.from_to_tx_filter).length
-    return transfers.filter(tf => (!has_token_filter || this.state.tokens_filter[tf.token_address]) && (!has_address_filter || this.filtered_hashes[tf.transaction_hash]))
+    return transfers.filter(tf => (!this.has_token_filter() || this.state.tokens_filter[tf.token_address]) && (!this.has_from_to_tx_filter() || this.filtered_hashes[tf.transaction_hash]))
   }
 
   restart_simulation = _ => {
@@ -565,7 +578,7 @@ class App extends PureComponent {
       return
     this.filters_prev_state = new_state
 
-    if (Object.keys(this.state.tokens_filter).length || Object.keys(this.state.from_to_tx_filter).length) {
+    if (this.has_token_filter() || this.has_from_to_tx_filter()) {
       for (const n of this.filtered_nodes) {
         n.filtered_transfers = this.filter_transfers(n.transfers)
         n.filtered_balances = {}

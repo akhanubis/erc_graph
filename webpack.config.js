@@ -9,7 +9,8 @@ const dev_mode = process.env.WEBPACK_DEV_SERVER === 'true'
 
 module.exports = {
   entry: {
-    graph: './src/graph.js'
+    graph: './src/graph.js',
+    index: './src/index.js'
   },
   output: {
     filename: dev_mode ? '[name].js' : '[name].[contenthash].js'
@@ -68,6 +69,12 @@ module.exports = {
       template: "./src/graph.html",
       filename: "./graph.html",
       chunks: ['graph'],
+      favicon: './src/assets/favicon.ico'
+    }),
+    new HtmlWebPackPlugin({
+      template: "./src/index.html",
+      filename: "./index.html",
+      chunks: ['index'],
       favicon: './src/assets/favicon.ico'
     }),
     new MiniCssExtractPlugin({
