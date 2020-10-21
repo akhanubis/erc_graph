@@ -14,6 +14,7 @@ const App = _ => {
   const [address, set_address] = useState('')
   const [ens, set_ens] = useState(false)
   const [protocol, set_protocol] = useState('')
+  const [bin, set_bin] = useState('')
 
   useEffect(_ => {
     const web3 = new Web3(POCKET_RPC_URL)
@@ -25,7 +26,7 @@ const App = _ => {
     setInterval(fetch_latest_bn, 10000)
   }, [])
 
-  const link = `/graph.html?fromBlock=${ from }&toBlock=${ to }&logAddress=${ address }&ens=${ ens }&filterFromToTxProtocol=${ protocol }`
+  const link = `/graph.html?fromBlock=${ from }&toBlock=${ to }&logAddress=${ address }&ens=${ ens }&filterFromToTxProtocol=${ protocol }&bin=${ bin }`
 
   return (
     <div className="main">
@@ -87,6 +88,7 @@ const App = _ => {
               <option value="uniswap">Uniswap</option>
               <option value="balancer">Balancer</option>
               <option value="sushiswap">Sushiswap</option>
+              <option value="aave">Aave</option>
               <option value="curve">Curve.fi</option>
               <option value="compound">Compound</option>
               <option value="uma">UMA</option>
@@ -107,6 +109,18 @@ const App = _ => {
             <Form.Check type="checkbox" checked={ens} onChange={e => set_ens(e.target.checked)}/>
             <Form.Text muted>
               Show .eth names for addresses with ENS names
+            </Form.Text>
+          </Col>
+        </Form.Group>
+
+        <Form.Group as={Form.Row}>
+          <Form.Label column sm="4">
+            Transactions to plot
+          </Form.Label>
+          <Col sm="8">
+            <Form.Control value={bin} onChange={e => set_bin(e.target.value)}/>
+            <Form.Text muted>
+              If you want to plot a custom set of transactions, paste a pastebin url to a list of transaction hashes separated by new line (e. g. https://pastebin.com/MyBin)
             </Form.Text>
           </Col>
         </Form.Group>

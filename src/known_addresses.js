@@ -371,6 +371,7 @@ export const COLORS_BY_PROTOCOL = {
   binance: '#FFC107',
   sushiswap: '#795548',
   uniswap: '#FF4081',
+  aave: '#00BCD4',
   curve: '#1976D2',
   uma: '#F44336',
   compound: '#4CAF50',

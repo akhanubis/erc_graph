@@ -1,6 +1,6 @@
 /*
-UI de filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link, el checkbox define si se usa filtered o no para transfers
-add the ability to enter a list of tx hashes so people can plot w/e they are interested in (you use public eth bq dataset, get the txs you need and paste their hashes in the site)
+filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link, el checkbox define si se usa filtered o no para transfers
+custom labels with pastebin
 paginar si >10k logs
 
 nice to have:
@@ -179,9 +179,20 @@ class App extends PureComponent {
 
     start_web3()
 
-    const transaction_hashes = query_string_to_list(this.url_params.get('hash'))
-    if (transaction_hashes.length) {
-      await this.load_transactions(transaction_hashes)
+    const pastebin_url = this.url_params.get('bin'),
+          transaction_hashes = query_string_to_list(this.url_params.get('hash'))
+    let total_hashes = []
+    if (pastebin_url) {
+      const list = await fetch(`https://cors-anywhere.herokuapp.com/https://pastebin.com/raw/${ pastebin_url.split('/').pop() }`).then(r => r.text())
+      total_hashes = [...total_hashes, ...list.split(/\r?\n/).map(h => h.trim()).filter(h => h)]
+    }
+    if (transaction_hashes.length)
+      total_hashes = [...total_hashes, ...transaction_hashes]
+    
+    this.resize()
+
+    if (total_hashes.length) {
+      await this.load_transactions(total_hashes)
       this.setState({ loading: false })
       this.after_load()
     }
@@ -189,8 +200,6 @@ class App extends PureComponent {
       this.listen_for_new_logs(this.url_params.get('fromBlock'), this.url_params.get('toBlock'), this.url_params.get('logAddress'))
       this.process_pending_logs()
     }
-    this.resize()
-    this.restart_simulation()
     
     this.previous_ts = window.performance.now()
     window.requestAnimationFrame(this.loop)
@@ -254,7 +263,6 @@ class App extends PureComponent {
       await promisesInChunk(Object.keys(unique_new_txs), METAMASK_ENABLED ? METAMASK_MAX_CONCURRENCY : POCKET_MAX_CONCURRENCY, this.load_transaction)
       this.setState({ loading: false })
       this.after_load()
-      this.restart_simulation()
     }
     setTimeout(this.process_pending_logs, 1000)
   }
