@@ -36,6 +36,9 @@ const App = _ => {
           <img src={Logo}></img>
           <span className="title">ERCGraph</span>
         </h1>
+        <div className="subtitle">
+          Interactive analysis and visualization tool showing ERC-20 transfers accross the Ethereum network
+        </div>
         <Form onSubmit={e => {
           e.preventDefault()
           window.location.href = link

@@ -10,6 +10,7 @@ import CustomLabels from './CustomLabels'
 import isTouchDevice from './is_touch_device'
 import FiltersCount from './FiltersCount'
 import './css/side_panel.css'
+import Logo from './assets/logo.png'
 
 const DesktopOnlyOverlayTrigger = props => {
   if (isTouchDevice())
@@ -90,11 +91,14 @@ const SidePanel = ({
             <Accordion.Collapse eventKey="info">
               <Card.Body ref={e => cardsRefs[0] = e}>
                 <p>
-                  TODO:
+                  ERCGraph is an interactive analysis and visualization tool showing ERC-20 transfers accross the Ethereum network
                 </p>
                 <div className="info-section">
-                  <p>TODO</p>
-                  <p></p>
+                  <p><span className="highlight">Transfers</span> are represented by lines and icons representing the tokens being transferred</p>
+                  <p><span className="highlight">EOA addresses</span> are represented by <i style={{ color: '#6FC6E8'}} className='fas fa-circle'/> and <span className="highlight">smart contracts</span> by <i style={{ color: '#2099C9'}} className='fas fa-circle'/>. Different colors are used to categorize addresses that belong to certain well known protocols and entities of the space</p>
+                  <p>To filter the data being displayed by several different criterias, head over to the <span className="highlight">Filters</span> section below. If, instead, you want to try graphing a completely different set of transfers, go <span className="highlight">back</span> and start again</p>
+                  <p>You can move elements around by drag and dropping, zoom in and out using the mouse wheel, and pan in any direction by holding the mouse wheel</p>
+                  <p>To quickly look up an element in a chain explorer, click it and use the "Copy to clipboard" and "Open in explorer" links</p>
                 </div>
               </Card.Body>
             </Accordion.Collapse>
@@ -142,6 +146,9 @@ const SidePanel = ({
             </Card.Header>
             <Accordion.Collapse eventKey="about">
               <Card.Body className="about-body" ref={e => cardsRefs[2] = e}>
+                <div className="logo-container">
+                  <img className="logo" src={Logo}/>
+                </div>
                 <p>
                   Created by <span className="weight-500">Pablo Bianciotto</span>
                   <DesktopOnlyOverlayTrigger placement="right" overlay={<Tooltip>Github</Tooltip>}>
@@ -155,8 +162,11 @@ const SidePanel = ({
                     </a>
                   </DesktopOnlyOverlayTrigger>
                 </p>
+                <p>
+                  Inspired by <a href="https://etherblocks.live/" target="_blank">Etherblocks</a>
+                </p>
                 <p className="powered-by">
-                  TODO:
+                  Data gathered using <a href="https://metamask.io/" target="_blank">Metamask</a>, <a href="https://www.pokt.network/" target="_blank">Pocket Network</a> and <a href="https://thegraph.com/" target="_blank">The Graph</a>
                 </p>
               </Card.Body>
             </Accordion.Collapse>
