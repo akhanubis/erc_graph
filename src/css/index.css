@@ -16,6 +16,8 @@ html, body, #root, .main {
 .main h1 {
   text-align: center;
   padding: 20px;
+  font-weight: 100;
+  letter-spacing: 15px;
 }
 
 .main form,
