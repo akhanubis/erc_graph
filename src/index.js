@@ -51,7 +51,7 @@ const App = _ => {
           <Col sm="8">
             <Form.Control value={from} onChange={e => set_from(e.target.value)}/>
             <Form.Text muted>
-              Leave it empty to use Latest Block # - 2
+              Leave it empty to use latest block - 2
             </Form.Text>
           </Col>
         </Form.Group>
@@ -120,7 +120,7 @@ const App = _ => {
           <Col sm="8">
             <Form.Control value={bin} onChange={e => set_bin(e.target.value)}/>
             <Form.Text muted>
-              If you want to plot a custom set of transactions, paste a pastebin url to a list of transaction hashes separated by new line (e. g. https://pastebin.com/MyBin)
+              If you want to plot a custom set of transactions, paste a pastebin url to a list of transaction hashes separated by new line (e. g. https://pastebin.com/4eNpUTiy)
             </Form.Text>
           </Col>
         </Form.Group>

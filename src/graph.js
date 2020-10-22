@@ -1,7 +1,5 @@
 /*
 filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link, el checkbox define si se usa filtered o no para transfers
-custom labels with pastebin
-paginar si >10k logs
 
 nice to have:
 remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
@@ -13,6 +11,7 @@ desp recalc balances de links
 desp recalc balances de nodos 
 desp borro nodos que no tienen keys en balance
 
+subgraph to be more efficient when querying by from to tx
 obtener internal tx usando https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=0x0414c8df68b8086a36c3c7990196ab9c48fa455678b132094b085d9091656b05&apikey=YourApiKeyToken
 filter para filtrar por address y poder traer history mas facil
 filter para filtrar por token y poder traer history mas facil
@@ -34,7 +33,7 @@ import ElementInfo from './ElementInfo'
 import SidePanel from './SidePanel'
 import { filterInPlace, promisesInChunk } from './utils'
 import { addressName, addressLabel, addressColor, reverseENS } from './address_label'
-import { BY_PROTOCOL, loadSubgraphs } from './known_addresses'
+import { BY_PROTOCOL, KNOWN_ADDRESSES, loadSubgraphs } from './known_addresses'
 import pSBC from './psbc'
 import 'babel-polyfill'
 
@@ -103,6 +102,7 @@ class App extends PureComponent {
 
     this.state = {
       loading: true,
+      final_loading: true,
       from_to_tx_filter: {
         ...BY_PROTOCOL[url_params.get('filterFromToTxProtocol')]
       },
@@ -114,6 +114,7 @@ class App extends PureComponent {
         min: null,
         max: null
       },
+      custom_labels: {},
       transfers_count: '',
       addresses_count: '',
       total_transfers_count: '',
@@ -153,7 +154,7 @@ class App extends PureComponent {
         this.update_element_at_pointer('hovered_element')
         this.update_element_at_pointer('clicked_element', true)
       })
-      .on('end', _ => this.setState({ force_running: false }))
+      .on('end', _ => this.setState({ force_running: false, final_loading: false }))
       .stop()
 
     let drag_behavior = d3.drag()
@@ -197,20 +198,45 @@ class App extends PureComponent {
       this.after_load()
     }
     else {
-      this.listen_for_new_logs(this.url_params.get('fromBlock'), this.url_params.get('toBlock'), this.url_params.get('logAddress'))
+      await this.listen_for_new_logs(this.url_params.get('fromBlock'), this.url_params.get('toBlock'), this.url_params.get('logAddress'))
       this.process_pending_logs()
     }
     
     this.previous_ts = window.performance.now()
     window.requestAnimationFrame(this.loop)
 
-    loadSubgraphs(address => this.update_node_metadata(address))
+    loadSubgraphs(a => this.update_node_metadata(a, true))
+  }
+
+  get_logs_with_metamask = async (fromBlock, toBlock, params) => {
+    console.log(`Fetching logs from ${ fromBlock } to ${ toBlock }`)
+    await window.web3.eth.getPastLogs({
+      ...params,
+      fromBlock,
+      toBlock
+    })
+    .then(logs => {
+      for (const l of logs)
+        this.pending_logs.push(l)
+    }).catch(e => {
+      if (e.code === -32005) {
+        if (fromBlock === toBlock)
+          return
+        const halfBlock = Math.floor(0.5 * (fromBlock + toBlock))
+        return Promise.all([
+          this.get_logs_with_metamask(fromBlock, Math.max(fromBlock, halfBlock), params),
+          this.get_logs_with_metamask(Math.min(halfBlock + 1, toBlock), toBlock, params)
+        ])
+      }
+      else
+        throw(e)
+    })
   }
 
   listen_for_new_logs = async (from, to, address) => {
     to = parseInt(to) || 'latest'
     const latest_bn = to === 'latest' ? (await window.web3.eth.getBlock(to)).number : to
-    from = from || latest_bn - DEFAULT_HISTORY_SIZE + 1
+    from = parseInt(from || latest_bn - DEFAULT_HISTORY_SIZE + 1)
 
     this.setState({ start_block: from, end_block: latest_bn })
 
@@ -222,8 +248,11 @@ class App extends PureComponent {
       logs_params.address = address
 
     if (METAMASK_ENABLED) {
+      /* paginate old blocks */
+      await this.get_logs_with_metamask(from, latest_bn - 1, logs_params)
       window.web3.eth.subscribe('logs', {
-        fromBlock: from,
+        fromBlock: latest_bn,
+        toBlock: to,
         ...logs_params
       }).on('data', log => this.pending_logs.push(log))
       if (to === 'latest')
@@ -469,13 +498,14 @@ class App extends PureComponent {
     }
   }
 
-  update_node_metadata = address => {
+  update_node_metadata = (address, update_color = false) => {
     const node = this.address_to_node[address]
     if (!node)
       return
     node.label = addressLabel(address)
     node.name = addressName(address)
-    node.color = addressColor(address)
+    if (update_color)
+      node.color = addressColor(address)
     node.outline_color = pSBC(-0.5, node.color)
   }
 
@@ -807,6 +837,14 @@ class App extends PureComponent {
 
   on_transfer_amount_filter_update = filters => this.setState({ transfer_amount_filter: filters }, this.restart_simulation)
 
+  on_custom_labels_update = filters => {
+    this.setState({ custom_labels: filters })
+    for (const entry of Object.entries(filters)) {
+      KNOWN_ADDRESSES[entry[0]] = entry[1]
+      this.update_node_metadata(entry[0])
+    }
+  }
+
   reset_view = _ => d3.select(this.canvas).call(this.zoom_behaviour.transform, d3.zoomIdentity)
 
   render() {
@@ -814,6 +852,7 @@ class App extends PureComponent {
     const {
       fps,
       loading,
+      final_loading,
       force_running,
       viewport_size,
       clicked_element_ts,
@@ -823,6 +862,7 @@ class App extends PureComponent {
       from_to_transfer_filter,
       from_to_tx_filter,
       transfer_amount_filter,
+      custom_labels,
       transfers_count,
       addresses_count,
       total_transfers_count,
@@ -843,6 +883,8 @@ class App extends PureComponent {
           on_from_to_tx_filter_update={this.on_from_to_tx_filter_update}
           transfer_amount_filter={transfer_amount_filter}
           on_transfer_amount_filter_update={this.on_transfer_amount_filter_update}
+          custom_labels={custom_labels}
+          on_custom_labels_update={this.on_custom_labels_update}
           start_block={start_block}
           end_block={end_block}
           transfers_count={transfers_count}
@@ -859,7 +901,7 @@ class App extends PureComponent {
           <ElementInfo transformation_matrix={this.zoom_transform} viewport_size={viewport_size} element={hovered_element} default_color={DEFAULT_HOVER_COLOR} hidden={loading || clicked_element === hovered_element} />
         </div>
       </div>,
-      <LoadingPanel key="2" loading={loading} total={loading_total} progress={loading_progress}/>
+      <LoadingPanel key="2" loading={loading} final_loading={final_loading} total={loading_total} progress={loading_progress}/>
     ])
   }
 }

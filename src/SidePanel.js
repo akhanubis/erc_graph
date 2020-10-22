@@ -6,6 +6,7 @@ import TokenFilter from './TokenFilter'
 import FromToTransferFilter from './FromToTransferFilter'
 import FromToTxFilter from './FromToTxFilter'
 import TransferAmountFilter from './TransferAmountFilter'
+import CustomLabels from './CustomLabels'
 import isTouchDevice from './is_touch_device'
 import FiltersCount from './FiltersCount'
 import './css/side_panel.css'
@@ -25,6 +26,8 @@ const SidePanel = ({
   on_from_to_tx_filter_update,
   transfer_amount_filter,
   on_transfer_amount_filter_update,
+  custom_labels,
+  on_custom_labels_update,
   start_block,
   end_block,
   transfers_count,
@@ -118,6 +121,10 @@ const SidePanel = ({
                   <TransferAmountFilter
                     filters={transfer_amount_filter}
                     on_update={on_transfer_amount_filter_update}
+                  />
+                  <CustomLabels
+                    custom_labels={custom_labels}
+                    on_update={on_custom_labels_update}
                   />
                 </div>
               </Card.Body>

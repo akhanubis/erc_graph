@@ -1,13 +1,15 @@
 import React from 'react'
 
-const Label = ({ total }) => {
+const Label = ({ loading, final_loading, total }) => {
+  if (!loading && final_loading)
+    return 'Finishing up'
   if (total)
     return `Processing ${ total } transactions`
   return 'Fetching logs'
 }
 
-const LoadingPanel = ({ loading, progress, total }) => {
-  if (!loading)
+const LoadingPanel = ({ loading, final_loading, progress, total }) => {
+  if (!(loading || final_loading))
     return null
 
   const percentage = 100 * progress / total
@@ -16,7 +18,7 @@ const LoadingPanel = ({ loading, progress, total }) => {
     <div key="1" className="loading-background">
       <div className="loading-bar-container">
         <div className="loading-bar-label">
-          <Label total={total}/>
+          <Label loading={loading} final_loading={final_loading} total={total}/>
         </div>
         {total && <div className="loading-bar-bar">
           <div className="loading-bar-bar-inner" style={{ width: `${ percentage }%`}}>
