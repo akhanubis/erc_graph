@@ -23,6 +23,7 @@ import * as d3 from 'd3'
 import BigNumber from 'bignumber.js'
 import Fps from './Fps'
 import Gas from './Gas'
+import LoadingLabels from './LoadingLabels'
 import LoadingPanel from './LoadingPanel'
 import Drawer from './VectorDrawer'
 import DataUtils from './data_utils'
@@ -101,6 +102,7 @@ class App extends PureComponent {
     this.state = {
       loading: true,
       final_loading: true,
+      loading_subgraphs: true,
       from_to_tx_filter: {
         ...BY_PROTOCOL[url_params.get('filterFromToTxProtocol')]
       },
@@ -204,7 +206,8 @@ class App extends PureComponent {
     this.previous_ts = window.performance.now()
     window.requestAnimationFrame(this.loop)
 
-    loadSubgraphs(a => this.update_node_metadata(a, true))
+    await loadSubgraphs(a => this.update_node_metadata(a, true)).catch(_ => {})
+    this.setState({ loading_subgraphs: false })
   }
 
   get_logs_with_metamask = async (fromBlock, toBlock, params) => {
@@ -861,6 +864,7 @@ class App extends PureComponent {
       fps,
       loading,
       final_loading,
+      loading_subgraphs,
       force_running,
       viewport_size,
       clicked_element_ts,
@@ -908,6 +912,7 @@ class App extends PureComponent {
           <canvas className="main-canvas" ref={c => this.canvas = c}/>
           <Fps fps={fps} running={force_running} alpha={current_alpha}/>
           <Gas />
+          <LoadingLabels loading={loading_subgraphs}/>
           <ElementInfo transformation_matrix={this.zoom_transform} viewport_size={viewport_size} ts={clicked_element_ts /* force update */} element={clicked_element} default_color={DEFAULT_HOVER_COLOR} hidden={loading} />
           <ElementInfo transformation_matrix={this.zoom_transform} viewport_size={viewport_size} element={hovered_element} default_color={DEFAULT_HOVER_COLOR} hidden={loading || clicked_element === hovered_element} />
         </div>

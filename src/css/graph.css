@@ -58,20 +58,25 @@ html, body, #root, .main-container, .canvas-container {
   z-index: 1;
 }
 
-.fps-container {
+.fps-container,
+.gas-container,
+.loading-labels-container {
   z-index: 3;
   position: absolute;
   right: 5px;
-  bottom: 0px;
   color: #AAAAAA;
 }
 
+.fps-container {
+  bottom: 0px;
+}
+
 .gas-container {
-  z-index: 3;
-  position: absolute;
-  right: 5px;
   bottom: 20px;
-  color: #AAAAAA;
+}
+
+.loading-labels-container {
+  bottom: 40px;
 }
 
 .foreground {
