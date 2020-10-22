@@ -145,7 +145,7 @@ const SidePanel = ({
                 <p>
                   Created by <span className="weight-500">Pablo Bianciotto</span>
                   <DesktopOnlyOverlayTrigger placement="right" overlay={<Tooltip>Github</Tooltip>}>
-                    <a href="https://github.com/akhanubis" target="_blank">
+                    <a href="https://github.com/akhanubis/1inch_graph" target="_blank">
                       <i className="fab fa-github"/>
                     </a>
                   </DesktopOnlyOverlayTrigger>
