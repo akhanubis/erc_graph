@@ -485,3 +485,5 @@ export const loadSubgraphs = async callback => {
     })
   ])
 }
+
+export const CUSTOM_LABELS = {}

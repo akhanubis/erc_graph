@@ -13,6 +13,16 @@ html, body, #root, .main {
   justify-content: center;
 }
 
+.main h1 {
+  text-align: center;
+  padding: 20px;
+}
+
+.main form,
+.main form .form-control {
+  font-size: 14px;
+}
+
 .main .go-container {
   width: 100%;
   display: flex;

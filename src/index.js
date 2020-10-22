@@ -30,7 +30,9 @@ const App = _ => {
 
   return (
     <div className="main">
-      TODO: TITLE
+      <h1>
+        ERCGraph
+      </h1>
       <Form onSubmit={e => {
         e.preventDefault()
         window.location.href = link
@@ -51,7 +53,7 @@ const App = _ => {
           <Col sm="8">
             <Form.Control value={from} onChange={e => set_from(e.target.value)}/>
             <Form.Text muted>
-              Leave it empty to use latest block - 2
+              Leave it empty to use latest block - 4
             </Form.Text>
           </Col>
         </Form.Group>
@@ -120,7 +122,7 @@ const App = _ => {
           <Col sm="8">
             <Form.Control value={bin} onChange={e => set_bin(e.target.value)}/>
             <Form.Text muted>
-              If you want to plot a custom set of transactions, paste a pastebin url to a list of transaction hashes separated by new line (e. g. https://pastebin.com/4eNpUTiy)
+              If you want to plot a custom set of transactions, paste a pastebin url that contains a list of transaction hashes separated by new line (e. g. https://pastebin.com/4eNpUTiy)
             </Form.Text>
           </Col>
         </Form.Group>

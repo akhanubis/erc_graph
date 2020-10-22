@@ -178,6 +178,7 @@ circle {
 }
 
 .loading-bar-container .loading-bar-bar .loading-bar-bar-inner {
+  transition: width 1s;
   background-color: #3286E5;
   height: 100%;
 }

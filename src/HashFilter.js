@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Form } from 'react-bootstrap'
 
-const HashFilter = ({ filters, on_update, title }) => {
+const HashFilter = ({ filters, on_update, title, children }) => {
   const [input_value, set_input_value] = useState(Object.keys(filters).join("\n"))
   
   const update_filters = e => {
@@ -16,7 +16,8 @@ const HashFilter = ({ filters, on_update, title }) => {
         {title}
       </div>
       <div className="filters-container">
-        <Form.Control as="textarea" rows="3" value={input_value} onChange={update_filters}/>
+        <Form.Control as="textarea" rows="2" value={input_value} onChange={update_filters}/>
+        {children ? children : null}
       </div>
     </div>
   )

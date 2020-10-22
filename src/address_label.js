@@ -1,10 +1,10 @@
 import { ethers } from 'ethers'
-import { KNOWN_ADDRESSES, KNOWN_ADDRESSES_COLORS } from './known_addresses'
+import { KNOWN_ADDRESSES, KNOWN_ADDRESSES_COLORS, CUSTOM_LABELS } from './known_addresses'
 import TokensMetadata from './TokensMetadata'
 
-export const addressLabel = address => KNOWN_ADDRESSES[address] || (TokensMetadata.get(address) || {}).symbol || address.substr(0, 7)
+export const addressLabel = address => CUSTOM_LABELS[address] || KNOWN_ADDRESSES[address] || (TokensMetadata.get(address) || {}).symbol || address.substr(0, 7)
 
-export const addressName = address => KNOWN_ADDRESSES[address] || (TokensMetadata.get(address) || {}).symbol || address
+export const addressName = address => CUSTOM_LABELS[address] || KNOWN_ADDRESSES[address] || (TokensMetadata.get(address) || {}).symbol || address
 
 export const addressColor = address => KNOWN_ADDRESSES_COLORS[address]
 

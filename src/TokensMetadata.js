@@ -17,6 +17,8 @@ class TokensMetadata {
     }
   }
 
+  static _by_symbol = {}
+  
   static add(address, metadata) {
     this._metadata[address] = metadata
   }
@@ -35,6 +37,10 @@ class TokensMetadata {
 
   static fromDecimals(value, address) {
     return value.times(Math.pow(10, -1 * this.decimals(address)))
+  }
+
+  static getAddressBySymbol(symbol) {
+    return (this._by_symbol[symbol.toLowerCase()] || {}).address
   }
 
   static async fetch(address) {
@@ -64,6 +70,7 @@ class TokensMetadata {
       decimals: parseInt(decimals)
     }
     this._metadata[address] = metadata
+    this._by_symbol[symbol.toLowerCase()] = metadata
     return metadata
   }
 }

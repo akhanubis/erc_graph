@@ -1,6 +1,4 @@
 /*
-filtrar por tokens, checkbox para que muestre o no otros transfers dentro de mismo link, el checkbox define si se usa filtered o no para transfers
-
 nice to have:
 remover bloq viejos, considerar guardar lista de txs hash por bloq y al momento de sacar aprovechando que cada transfer tiene su hash
 guardo tx hashes por bloq num
@@ -33,7 +31,7 @@ import ElementInfo from './ElementInfo'
 import SidePanel from './SidePanel'
 import { filterInPlace, promisesInChunk } from './utils'
 import { addressName, addressLabel, addressColor, reverseENS } from './address_label'
-import { BY_PROTOCOL, KNOWN_ADDRESSES, loadSubgraphs } from './known_addresses'
+import { BY_PROTOCOL, CUSTOM_LABELS, loadSubgraphs } from './known_addresses'
 import pSBC from './psbc'
 import 'babel-polyfill'
 
@@ -48,7 +46,7 @@ const
   SEMANTIC_ZOOM_TRESHOLD = 1.5,
   DEFAULT_HOVER_COLOR = '#000000',
   FPS_UPDATE_WINDOW = 30,
-  DEFAULT_HISTORY_SIZE = 2,
+  DEFAULT_HISTORY_SIZE = 5,
   METAMASK_ENABLED = window.ethereum,
   POCKET_MAX_CONCURRENCY = 50,
   METAMASK_MAX_CONCURRENCY = 500
@@ -110,6 +108,7 @@ class App extends PureComponent {
         ...BY_PROTOCOL[url_params.get('filterFromToTransferProtocol')]
       },
       tokens_filter: {},
+      show_every_token_on_link: false,
       transfer_amount_filter: {
         min: null,
         max: null
@@ -587,7 +586,7 @@ class App extends PureComponent {
     return links
   }
 
-  filter_links_by_address = links => {
+  filter_links_by_from_to_tx = links => {
     if (!this.has_from_to_tx_filter())
       return links
     this.filtered_hashes = {}
@@ -611,7 +610,7 @@ class App extends PureComponent {
 
   filter_links = links => {
     const copy = [...links]
-    const filtered = this.filter_links_by_token(this.filter_links_by_address(this.filter_links_by_from_to_transfer(copy)))
+    const filtered = this.filter_links_by_token(this.filter_links_by_from_to_tx(this.filter_links_by_from_to_transfer(copy)))
     return filtered
   }
 
@@ -624,7 +623,7 @@ class App extends PureComponent {
     return nodes.filter(n => remaining_addresses[n.identifier])
   }
 
-  unique_filters_state_id = _ => `${ this.filtered_nodes.map(n => n.identifier).sort().join('__') }____${ this.filtered_links.map(l => l.hash).sort().join('__') }`
+  unique_filters_state_id = _ => `${ JSON.stringify(this.state.tokens_filter) }__${ JSON.stringify(this.state.from_to_transfer_filter) }__${ JSON.stringify(this.state.from_to_tx_filter) }__${ this.state.show_every_token_on_link }__${ JSON.stringify(this.state.transfer_amount_filter) }__${ this.filtered_nodes.map(n => n.identifier).sort().join('__') }____${ this.filtered_links.map(l => l.hash).sort().join('__') }`
 
   has_token_filter = _ => Object.values(this.state.tokens_filter).some(v => v)
 
@@ -644,6 +643,8 @@ class App extends PureComponent {
   }
 
   filter_transfers = transfers => {
+    if (this.state.show_every_token_on_link)
+      return transfers
     return transfers.filter(tf =>
       (!this.has_token_filter() || this.filter_transfer_by_token(tf)) &&
       (!this.has_from_to_tx_filter() || this.filter_transfer_by_hash(tf)) &&
@@ -829,7 +830,10 @@ class App extends PureComponent {
     return max_x > this.viewport_bb.min[0] && min_x < this.viewport_bb.max[0] && max_y > this.viewport_bb.min[1] && min_y < this.viewport_bb.max[1]
   }
 
-  on_token_filter_update = filters => this.setState({ tokens_filter: filters }, this.restart_simulation)
+  on_token_filter_update = filters => {
+    const parsed = Object.entries(filters).reduce((out, [k, v]) => ({ ...out, [TokensMetadata.getAddressBySymbol(k) || k]: v }), {})
+    this.setState({ tokens_filter: parsed }, this.restart_simulation)
+  }
 
   on_from_to_transfer_filter_update = filters => this.setState({ from_to_transfer_filter: filters }, this.restart_simulation)
 
@@ -839,11 +843,15 @@ class App extends PureComponent {
 
   on_custom_labels_update = filters => {
     this.setState({ custom_labels: filters })
+    for (const k in CUSTOM_LABELS)
+      delete CUSTOM_LABELS[k]
     for (const entry of Object.entries(filters)) {
-      KNOWN_ADDRESSES[entry[0]] = entry[1]
+      CUSTOM_LABELS[entry[0]] = entry[1]
       this.update_node_metadata(entry[0])
     }
   }
+
+  on_show_every_token_on_link_update = new_val => this.setState({ show_every_token_on_link: new_val }, this.restart_simulation)
 
   reset_view = _ => d3.select(this.canvas).call(this.zoom_behaviour.transform, d3.zoomIdentity)
 
@@ -859,6 +867,7 @@ class App extends PureComponent {
       hovered_element,
       clicked_element,
       tokens_filter,
+      show_every_token_on_link,
       from_to_transfer_filter,
       from_to_tx_filter,
       transfer_amount_filter,
@@ -877,6 +886,8 @@ class App extends PureComponent {
         <SidePanel
           token_filter={tokens_filter}
           on_token_filter_update={this.on_token_filter_update}
+          show_every_token_on_link={show_every_token_on_link}
+          on_show_every_token_on_link_update={this.on_show_every_token_on_link_update}
           from_to_transfer_filter={from_to_transfer_filter}
           on_from_to_transfer_filter_update={this.on_from_to_transfer_filter_update}
           from_to_tx_filter={from_to_tx_filter}

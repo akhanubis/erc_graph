@@ -20,6 +20,8 @@ const DesktopOnlyOverlayTrigger = props => {
 const SidePanel = ({
   token_filter,
   on_token_filter_update,
+  show_every_token_on_link,
+  on_show_every_token_on_link_update,
   from_to_transfer_filter,
   on_from_to_transfer_filter_update,
   from_to_tx_filter,
@@ -109,6 +111,8 @@ const SidePanel = ({
                   <TokenFilter
                     filters={token_filter}
                     on_update={on_token_filter_update}
+                    show_every_token_on_link={show_every_token_on_link}
+                    on_show_every_token_on_link_update={on_show_every_token_on_link_update}
                   />
                   <FromToTxFilter
                     filters={from_to_tx_filter}
