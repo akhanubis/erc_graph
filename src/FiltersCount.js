@@ -5,9 +5,9 @@ const FiltersCount = ({ token_filter, from_to_tx_filter, from_to_transfer_filter
   let active_count = 0
   if (Object.values(token_filter).some(f => f))
     active_count++
-  if (Object.values(from_to_tx_filter).some(f => !f))
+  if (Object.values(from_to_tx_filter).some(f => f))
     active_count++
-  if (Object.values(from_to_transfer_filter).some(f => !f))
+  if (Object.values(from_to_transfer_filter).some(f => f))
     active_count++
 
   if (active_count)

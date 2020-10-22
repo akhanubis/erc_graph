@@ -626,8 +626,6 @@ class App extends PureComponent {
     return nodes.filter(n => remaining_addresses[n.identifier])
   }
 
-  unique_filters_state_id = _ => `${ JSON.stringify(this.state.tokens_filter) }__${ JSON.stringify(this.state.from_to_transfer_filter) }__${ JSON.stringify(this.state.from_to_tx_filter) }__${ this.state.show_every_token_on_link }__${ JSON.stringify(this.state.transfer_amount_filter) }__${ this.filtered_nodes.map(n => n.identifier).sort().join('__') }____${ this.filtered_links.map(l => l.hash).sort().join('__') }`
-
   has_token_filter = _ => Object.values(this.state.tokens_filter).some(v => v)
 
   has_from_to_tx_filter = _ => Object.values(this.state.from_to_tx_filter).some(v => v)
@@ -653,18 +651,12 @@ class App extends PureComponent {
       (!this.has_from_to_tx_filter() || this.filter_transfer_by_hash(tf)) &&
       (!this.has_transfer_amount_filter() || this.filter_transfer_by_amount(tf)))
   }
-  
 
   restart_simulation = _ => {
     const filtered_links = this.filter_links(this.links),
           filtered_nodes = this.filter_nodes(this.nodes, filtered_links)
     this.filtered_nodes = filtered_nodes
     this.filtered_links = filtered_links
-
-    const new_state = this.unique_filters_state_id()
-    if (this.filters_prev_state === new_state)
-      return
-    this.filters_prev_state = new_state
 
     let filtered_transfers_count = 0
     if (this.has_token_filter() || this.has_from_to_tx_filter() || this.has_transfer_amount_filter()) {
