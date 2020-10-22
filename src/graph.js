@@ -376,7 +376,10 @@ class App extends PureComponent {
           radius: 30,
           color,
           outline_color: pSBC(-0.5, color),
-          transfers: []
+          transfers: [],
+          filtered_transfers: [],
+          balances: {},
+          filtered_balances: {}
         }
         this.nodes.push(node)
         this.address_to_node[address] = node
@@ -396,6 +399,15 @@ class App extends PureComponent {
           target_address: target,
           key,
           transfers: [],
+          filtered_transfers: [],
+          source_amounts: {},
+          filtered_source_amounts: {},
+          target_amounts: {},
+          filtered_target_amounts: {},
+          source_icons: [],
+          filtered_source_icons: [],
+          target_icons: [],
+          filtered_target_icons: [],
           width: 1,
           loop: source === target,
           type: 'link'
