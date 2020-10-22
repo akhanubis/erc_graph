@@ -69,13 +69,13 @@ module.exports = {
       template: "./src/graph.html",
       filename: "./graph.html",
       chunks: ['graph'],
-      favicon: './src/assets/favicon.ico'
+      favicon: './src/assets/logo03.svg'
     }),
     new HtmlWebPackPlugin({
       template: "./src/index.html",
       filename: "./index.html",
       chunks: ['index'],
-      favicon: './src/assets/favicon.ico'
+      favicon: './src/assets/logo03.svg'
     }),
     new MiniCssExtractPlugin({
       filename: dev_mode ? '[name].css' : '[name].[hash].css',

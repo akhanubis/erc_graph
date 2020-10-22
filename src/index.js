@@ -6,6 +6,7 @@ import Web3 from 'web3'
 
 import './css/bootstrap.min.css'
 import './css/index.css'
+import Logo from './assets/logo03.svg'
 
 const App = _ => {
   const [from, set_from] = useState('')
@@ -32,7 +33,8 @@ const App = _ => {
     <div className="main-outer">
       <div className="main">
         <h1>
-          ERCGraph
+          <img src={Logo}></img>
+          <span className="title">ERCGraph</span>
         </h1>
         <Form onSubmit={e => {
           e.preventDefault()

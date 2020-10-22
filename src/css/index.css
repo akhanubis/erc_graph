@@ -30,8 +30,17 @@ html, body, #root, .main-outer {
 .main h1 {
   text-align: center;
   padding: 20px;
-  font-weight: 600;
+  font-weight: 100;
   letter-spacing: 15px;
+}
+
+.main h1 img {
+  width: 128px;
+  margin-right: 10px;
+}
+
+.main h1 title {
+  margin-left: 10px;
 }
 
 .main form,
