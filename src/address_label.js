@@ -10,7 +10,8 @@ export const addressColor = address => KNOWN_ADDRESSES_COLORS[address]
 
 /* closure */
 export const reverseENS = (_ => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum || POCKET_RPC_URL)
-
+  if (!window.ethereum)
+    return _ => {}
+  const provider = new ethers.providers.Web3Provider(window.ethereum)
   return address => provider.lookupAddress(address)
 })()
