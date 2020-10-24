@@ -181,16 +181,17 @@ class App extends PureComponent {
 
     start_web3()
 
-    const pastebin_url = this.url_params.get('bin'),
+    const pastebin_urls = query_string_to_list(this.url_params.get('bin')),
           transaction_hashes = query_string_to_list(this.url_params.get('hash'))
     let total_hashes = []
-    if (pastebin_url) {
-      const list = await fetch(`https://cors-anywhere.herokuapp.com/https://pastebin.com/raw/${ pastebin_url.split('/').pop() }`).then(r => r.text())
-      total_hashes = [...total_hashes, ...list.split(/\r?\n/).map(h => h.trim()).filter(h => h)]
+    if (pastebin_urls.length) {
+      const lists = await Promise.all(pastebin_urls.map(u => fetch(`https://cors-anywhere.herokuapp.com/https://pastebin.com/raw/${ u.split('/').pop() }`).then(r => r.text())))
+      for (const l of lists)
+        total_hashes = [...total_hashes, ...l.split(/\r?\n/).map(line => line.trim()).filter(line => line).map(line => line.split(',')[0]).map(h => h.trim())]
     }
     if (transaction_hashes.length)
       total_hashes = [...total_hashes, ...transaction_hashes]
-    
+
     this.resize()
 
     if (total_hashes.length) {
