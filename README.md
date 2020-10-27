@@ -4,7 +4,7 @@
 
 **Short Description**
 
-[Site](https://ercgraph.live) is a real-time and historic graph showing ERC20 transfers accross the Ethereum network
+https://ercgraph.live is a real-time and historic graph showing ERC20 transfers accross the Ethereum network
 
 **Long Description**
 
