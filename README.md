@@ -1,3 +1,5 @@
+![Cover](/src/assets/cover.png)
+
 *Built for ETHOnline 2020 hackaton: https://hack.ethglobal.co/showcase/ercgraph-recLJF7p1U4VzRA12*
 
 **Short Description**
