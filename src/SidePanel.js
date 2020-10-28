@@ -163,6 +163,9 @@ const SidePanel = ({
                   </DesktopOnlyOverlayTrigger>
                 </p>
                 <p>
+                  Buy me a <a href="https://gitcoin.co/grants/1488/ercgraph" target="_blank">coffee</a>
+                </p>
+                <p>
                   Inspired by <a href="https://etherblocks.live/" target="_blank">Etherblocks</a>
                 </p>
                 <p className="powered-by">
