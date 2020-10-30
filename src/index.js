@@ -16,6 +16,7 @@ const App = _ => {
   const [ens, set_ens] = useState(false)
   const [protocol, set_protocol] = useState('')
   const [bin, set_bin] = useState('')
+  const [hash, set_hash] = useState('')
 
   useEffect(_ => {
     const web3 = new Web3(POCKET_RPC_URL)
@@ -27,7 +28,7 @@ const App = _ => {
     setInterval(fetch_latest_bn, 10000)
   }, [])
 
-  const link = `/graph.html?fromBlock=${ from }&toBlock=${ to }&logAddress=${ address }&ens=${ ens }&filterFromToTxProtocol=${ protocol }&bin=${ bin }`
+  const link = `/graph.html?fromBlock=${ from }&toBlock=${ to }&logAddress=${ address }&ens=${ ens }&filterFromToTxProtocol=${ protocol }&bin=${ bin }&hash=${ hash }`
 
   return (
     <div className="main-outer">
@@ -124,6 +125,18 @@ const App = _ => {
           <Form.Group as={Form.Row}>
             <Form.Label column sm="4">
               Transactions to plot
+            </Form.Label>
+            <Col sm="8">
+              <Form.Control value={hash} onChange={e => set_hash(e.target.value)}/>
+              <Form.Text muted>
+                If you want to plot a custom set of transactions, paste transactions hashes separated by comma
+              </Form.Text>
+            </Col>
+          </Form.Group>
+
+          <Form.Group as={Form.Row}>
+            <Form.Label column sm="4">
+              Batch Transactions to plot
             </Form.Label>
             <Col sm="8">
               <Form.Control value={bin} onChange={e => set_bin(e.target.value)}/>
