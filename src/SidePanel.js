@@ -168,6 +168,20 @@ const SidePanel = ({
                 <p>
                   Inspired by <a href="https://etherblocks.live/" target="_blank">Etherblocks</a>
                 </p>
+                <p>
+                  Built for <a href="https://hack.ethglobal.co/showcase/ercgraph-recLJF7p1U4VzRA12" target="_blank">ETHOnline 2020 Hackathon</a>
+                </p>
+                <p className="powered-by">
+                  <span className="article">
+                    ●&nbsp;1st place for 1Inch.exchange overall coolest hack (<a href="https://1inch-exchange.medium.com/from-ethnyc-hackers-ethonline-sponsors-1inchs-ethonline-winners-4284413e9cbc" target="_blank">link</a>)
+                  </span>
+                  <span className="article">
+                    ●&nbsp;4th place for Pocket Network RPC endpoint (<a href="https://medium.com/pocket-network/pocket-bounty-winners-of-the-ethonline-hackathon-by-ethglobal-ea7957b7ac4c" target="_blank">link</a>)
+                  </span>
+                  <span className="article">
+                    ●&nbsp;One of best five projects to integrate ENS
+                  </span>
+                </p>
                 <p className="powered-by">
                   Data gathered using <a href="https://metamask.io/" target="_blank">Metamask</a>, <a href="https://www.pokt.network/" target="_blank">Pocket Network</a> and <a href="https://thegraph.com/" target="_blank">The Graph</a>
                 </p>

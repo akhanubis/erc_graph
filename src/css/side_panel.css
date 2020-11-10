@@ -221,3 +221,8 @@
 .sidebar .filter-section .filter-label {
   margin-bottom: 5px;
 }
+
+.sidebar .about-body .article {
+  display: block;
+  font-size: 12px;
+}
